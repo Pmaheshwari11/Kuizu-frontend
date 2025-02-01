@@ -124,7 +124,7 @@ function SP_SURVIVAL() {
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full text-center">
             <img
-              src="/assets/loading.png" // Replace with your loading image path
+              src="/Assets/loading.png" // Replace with your loading image path
               alt="Loading..."
               className="animate-spin h-32 w-32 mx-auto"
             />
