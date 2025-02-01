@@ -13,9 +13,11 @@ function SP_CLASSIC() {
   const [questionNumber, setQuestionNumber] = useState(0);
   const [isGameActive, setIsGameActive] = useState(false);
   const [restarting, setRestarting] = useState(false);
+  const [loading, setLoading] = useState(false); // State for loading popup
 
   const startGame = async () => {
     setRestarting(true);
+    setLoading(true);
     try {
       const quizData = await getQuiz();
       if (quizData?.results && quizData.results.length > 0) {
@@ -32,6 +34,8 @@ function SP_CLASSIC() {
     } catch (error) {
       console.error("Error fetching quiz data:", error);
       toast.error("Error fetching quiz data. Please try again later.");
+    } finally {
+      setLoading(false); // Hide the loading popup after the game starts
     }
   };
 
@@ -91,6 +95,22 @@ function SP_CLASSIC() {
       >
         <FiArrowLeft size={30} />
       </a>
+
+      {/* Loading Popup */}
+      {loading && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full text-center">
+            <img
+              src="/assets/loading.png" // Replace with your loading image path
+              alt="Loading..."
+              className="animate-spin h-32 w-32 mx-auto"
+            />
+            <h3 className="mt-4 text-xl font-semibold text-gray-900">
+              Loading...
+            </h3>
+          </div>
+        </div>
+      )}
 
       {showRules ? (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-fadeIn">
