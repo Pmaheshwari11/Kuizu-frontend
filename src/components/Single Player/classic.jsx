@@ -2,47 +2,82 @@ import React, { useState, useEffect } from "react";
 import { FiArrowLeft } from "react-icons/fi";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { getQuiz } from "../../server";
+import he from "he";
 
 function SP_CLASSIC() {
   const [showRules, setShowRules] = useState(true);
-  const [question, setQuestion] = useState("Loading question...");
+  const [questions, setQuestions] = useState([]);
+  const [question, setQuestion] = useState("");
   const [score, setScore] = useState(0);
-  const [questionNumber, setQuestionNumber] = useState(0); // Track the question number
+  const [questionNumber, setQuestionNumber] = useState(0);
   const [isGameActive, setIsGameActive] = useState(false);
+  const [restarting, setRestarting] = useState(false);
 
-  // Function to start the game (closes rules popup & starts the game)
-  const startGame = () => {
-    setShowRules(false);
-    setScore(0);
-    setQuestionNumber(0); // Reset question count
-    setIsGameActive(true);
-    fetchNewQuestion();
-  };
-
-  // Fetch new question (Placeholder logic, replace with API or logic later)
-  const fetchNewQuestion = () => {
-    setQuestion("What is 2 + 2?"); // Replace with real logic
-  };
-
-  // Update score, check if game is over
-  const updateScore = () => {
-    if (!isGameActive || questionNumber >= 10) return; // No update after 10 questions
-
-    setScore((prevScore) => prevScore + 10); // Increase score on correct answer
-    toast.success("+10 Points");
-
-    setQuestionNumber((prevNumber) => prevNumber + 1); // Move to next question
-    if (questionNumber + 1 === 10) {
-      gameOver(); // End game after 10 questions
-    } else {
-      fetchNewQuestion(); // Get next question
+  const startGame = async () => {
+    setRestarting(true);
+    try {
+      const quizData = await getQuiz();
+      if (quizData?.results && quizData.results.length > 0) {
+        setQuestions(quizData.results); // Set the fetched questions
+        setQuestion(he.decode(quizData.results[0]?.question)); // Set first question
+        setRestarting(false);
+        setScore(0); // Reset score
+        setQuestionNumber(0); // Reset question number
+        setIsGameActive(true); // Start the game
+        setShowRules(false); // Hide rules screen
+      } else {
+        toast.error("Failed to load questions. Try again!");
+      }
+    } catch (error) {
+      console.error("Error fetching quiz data:", error);
+      toast.error("Error fetching quiz data. Please try again later.");
     }
   };
 
-  // Game Over
+  const fetchNewQuestion = (index) => {
+    if (index < questions.length) {
+      setQuestion(he.decode(questions[index]?.question)); // Set next question
+    }
+  };
+
+  useEffect(() => {
+    if (questions.length > 0 && questionNumber < questions.length) {
+      setQuestion(he.decode(questions[questionNumber]?.question)); // Update question on change
+    }
+  }, [questionNumber, questions]);
+
+  const updateScore = () => {
+    if (!isGameActive || questionNumber > 9) return;
+
+    setScore((prev) => prev + 10); // Increment score
+    toast.success("+10 Points");
+
+    const nextQuestionNumber = questionNumber + 1;
+    setQuestionNumber(nextQuestionNumber);
+
+    if (nextQuestionNumber === 10) {
+      gameOver();
+    } else {
+      fetchNewQuestion(nextQuestionNumber);
+    }
+  };
+
   const gameOver = () => {
     setIsGameActive(false);
     toast.error("Game Over! You've answered all the questions.");
+  };
+
+  const handleAnswerClick = (answer) => {
+    if (
+      questions.length > 0 &&
+      he.decode(answer) === he.decode(questions[questionNumber]?.correct_answer)
+    ) {
+      updateScore();
+    } else {
+      toast.error("Wrong Answer!");
+      setQuestionNumber((prev) => prev + 1); // Move to the next question after wrong answer
+    }
   };
 
   return (
@@ -57,8 +92,7 @@ function SP_CLASSIC() {
         <FiArrowLeft size={30} />
       </a>
 
-      {/* Game Rules Popup */}
-      {showRules && (
+      {showRules ? (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full text-center">
             <h2 className="text-3xl font-extrabold mb-6 text-gray-900">
@@ -78,48 +112,84 @@ function SP_CLASSIC() {
             </button>
           </div>
         </div>
-      )}
-
-      {/* Game Screen */}
-      {!showRules && (
+      ) : (
         <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg text-center flex flex-col space-y-6">
-          {/* Score & Question Number Section */}
-          <div className="flex justify-between items-center bg-gray-100 p-4 rounded-lg shadow-inner">
-            <div className="flex flex-col items-center">
-              <h2 className="text-lg font-bold text-blue-600">Score</h2>
-              <span className="text-3xl font-extrabold text-gray-900">
-                {score}
-              </span>
+          {questionNumber < 10 ? (
+            <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg text-center flex flex-col space-y-6">
+              <div className="flex justify-between items-center bg-gray-100 p-4 rounded-lg shadow-inner">
+                <div className="flex flex-col items-center">
+                  <h2 className="text-lg font-bold text-blue-600">Score</h2>
+                  <span className="text-3xl font-extrabold text-gray-900">
+                    {score}
+                  </span>
+                </div>
+                <div className="border-l-2 border-gray-300"></div>
+                <div className="flex flex-col items-center">
+                  <h3 className="text-lg font-bold text-green-600">
+                    Max Score
+                  </h3>
+                  <span className="text-3xl font-extrabold text-gray-900">
+                    100
+                  </span>
+                </div>
+              </div>
+
+              <h4 className="text-2xl font-extrabold text-gray-800 mt-4">
+                Question {questionNumber + 1} of 10
+              </h4>
+
+              <div className="bg-blue-50 p-6 rounded-lg shadow-md border border-blue-300">
+                <h3 className="text-xl font-semibold text-blue-800">
+                  Question
+                </h3>
+                <p className="mt-2 text-lg font-medium text-gray-900">
+                  {question || "Loading..."}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {questions.length > 0 &&
+                  (questions[questionNumber]?.incorrect_answers?.length > 0
+                    ? [
+                        ...questions[questionNumber]?.incorrect_answers,
+                        questions[questionNumber]?.correct_answer,
+                      ]
+                    : [questions[questionNumber]?.correct_answer]
+                  )
+                    .filter(Boolean) // Filter out any falsy values
+                    .sort(() => Math.random() - 0.5) // Shuffle answers
+                    .map((answer, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleAnswerClick(he.decode(answer))}
+                        className="bg-gray-200 py-3 px-4 rounded-lg shadow-md hover:bg-gray-300"
+                      >
+                        {he.decode(answer)}{" "}
+                        {/* Decode answer before rendering */}
+                      </button>
+                    ))}
+              </div>
             </div>
-            <div className="border-l-2 border-gray-300"></div>
-            <div className="flex flex-col items-center">
-              <h3 className="text-lg font-bold text-green-600">Max Score</h3>
-              <span className="text-3xl font-extrabold text-gray-900">100</span>
+          ) : (
+            <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg text-center flex flex-col space-y-6">
+              <h3 className="text-3xl font-semibold text-red-500">
+                Game Over!
+              </h3>
+              <h4 className="text-xl font-bold text-gray-900 mt-4">
+                Your Final Score: {score}
+              </h4>
+              <button
+                onClick={startGame}
+                disabled={restarting}
+                className="mt-6 bg-green-500 text-white py-3 px-8 rounded-lg shadow-md hover:bg-green-600 hover:scale-105 transition-all duration-300"
+              >
+                Restart Game
+              </button>
             </div>
-          </div>
-
-          {/* Question Number */}
-          <h4 className="text-2xl font-extrabold text-gray-800 mt-4">
-            Question {questionNumber + 1} of 10
-          </h4>
-
-          {/* Question Section */}
-          <div className="bg-blue-50 p-6 rounded-lg shadow-md border border-blue-300">
-            <h3 className="text-xl font-semibold text-blue-800">Question</h3>
-            <p className="mt-2 text-lg font-medium text-gray-900">{question}</p>
-          </div>
-
-          {/* Answer Button */}
-          <div className="flex justify-center space-x-6 mt-6">
-            <button
-              onClick={updateScore}
-              className="bg-green-500 text-white py-3 px-8 rounded-lg shadow-md hover:bg-green-600 hover:scale-105 transition-all duration-300"
-            >
-              Correct (+10)
-            </button>
-          </div>
+          )}
         </div>
       )}
+
       <ToastContainer
         position="top-center"
         autoClose={500}
