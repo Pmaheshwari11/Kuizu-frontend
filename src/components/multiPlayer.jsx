@@ -28,7 +28,9 @@ function MultiPlayer() {
         <div className="grid grid-cols-1 gap-6">
           {/* Create a Room */}
           <button
-            onClick={() => navigate("/chooseAvtar")}
+            onClick={() =>
+              navigate("/chooseAvtar", { state: { from: "create" } })
+            }
             className="bg-gradient-to-r from-teal-400 to-blue-500 text-white text-xl font-semibold px-10 py-6 rounded-lg shadow-lg hover:from-teal-500 hover:to-blue-600 transform hover:scale-105 transition-all text-center"
           >
             🏗️ Create a Room
@@ -36,7 +38,9 @@ function MultiPlayer() {
 
           {/* Join a Room */}
           <button
-            onClick={() => navigate("/join-room")}
+            onClick={() =>
+              navigate("/chooseAvtar", { state: { from: "join" } })
+            }
             className="bg-gradient-to-r from-indigo-400 to-purple-500 text-black text-xl font-semibold px-10 py-6 rounded-lg shadow-lg hover:from-indigo-500 hover:to-purple-600 transform hover:scale-105 transition-all text-center"
           >
             🔑 Join a Room

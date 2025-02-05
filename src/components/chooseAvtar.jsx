@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FiArrowLeft } from "react-icons/fi";
@@ -7,8 +7,12 @@ import Logo from "./logo";
 import { useWebSocket } from "../websocket"; // Import the custom hook
 
 function ChooseAvatar() {
-  const [name, setName] = useState("");
-  const [selectedImage, setSelectedImage] = useState(0);
+  const location = useLocation();
+  const from = location.state?.from || "Unknown";
+  const username = localStorage.getItem("username");
+  const avatar = localStorage.getItem("avatar");
+  const [name, setName] = useState(username);
+  const [selectedImage, setSelectedImage] = useState(avatar || 0);
 
   const navigate = useNavigate();
   const { socket, connected } = useWebSocket(); // Use the WebSocket context
@@ -37,11 +41,19 @@ function ChooseAvatar() {
     }
 
     // Emit the createParty event using the socket from context
-    if (connected) {
-      navigate("/createRoom");
-      socket.emit("createParty", name);
+    localStorage.setItem("username", name);
+    localStorage.setItem("avatar", selectedImage);
+    if (from === "create") {
+      if (connected) {
+        socket.emit("createParty", name, selectedImage);
+        socket.on("partyCreated", (data) => {
+          navigate(`/lobby/${btoa(data.currentPartyId)}`);
+        });
+      } else {
+        toast.error("Unable to connect to the server. Please try again.");
+      }
     } else {
-      toast.error("Unable to connect to the server. Please try again.");
+      navigate(`/joinRoom`);
     }
   };
 
@@ -50,12 +62,14 @@ function ChooseAvatar() {
       className="flex flex-col items-center justify-center min-h-screen bg-cover bg-center p-4"
       style={{ backgroundImage: "url(/Assets/background.png)" }}
     >
-      <a
-        href="/multiplayer"
-        className="absolute top-4 left-4 rounded-2xl bg-[#d2d1d142]"
+      <button
+        onClick={() => {
+          navigate(-1);
+        }}
+        className="absolute top-4 left-4 rounded-2xl bg-[#d2d1d142] z-10"
       >
         <FiArrowLeft size={30} />
-      </a>
+      </button>
 
       <Logo />
 
