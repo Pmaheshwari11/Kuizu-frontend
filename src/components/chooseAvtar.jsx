@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FiArrowLeft } from "react-icons/fi";
+import Logo from "./logo";
 
 function ChooseAvatar() {
   const [name, setName] = useState("");
@@ -53,26 +54,8 @@ function ChooseAvatar() {
       >
         <FiArrowLeft size={30} />
       </a>
-      <h1 className="mb-8 flex justify-center items-center w-full font-henny-penny">
-        <svg height="90" width="300">
-          <text
-            fontSize="80"
-            fontWeight="bold"
-            x="10"
-            y="80"
-            stroke="black"
-            strokeWidth="0.1"
-            fill="none"
-          >
-            <tspan fill="red">K</tspan>
-            <tspan fill="orange">u</tspan>
-            <tspan fill="yellow">i</tspan>
-            <tspan fill="green">z</tspan>
-            <tspan fill="blue">u</tspan>
-            <tspan fill="purple">?</tspan>
-          </text>
-        </svg>
-      </h1>
+      
+      <Logo></Logo>
 
       <div className=" p-6 rounded-lg  w-full max-w-lg flex flex-col items-center gap-6">
         <div className="relative w-40 flex items-center justify-center">
