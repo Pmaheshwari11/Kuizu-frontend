@@ -1,15 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FiArrowLeft } from "react-icons/fi";
 import Logo from "./logo";
+import { useWebSocket } from "../websocket"; // Import the custom hook
 
 function ChooseAvatar() {
   const [name, setName] = useState("");
   const [selectedImage, setSelectedImage] = useState(0);
 
   const navigate = useNavigate();
+  const { socket, connected } = useWebSocket(); // Use the WebSocket context
 
   const images = [
     "/Assets/avatar1.png",
@@ -28,19 +30,19 @@ function ChooseAvatar() {
     );
   };
 
-  useEffect(() => {
-    if (name !== "") {
-      localStorage.setItem("username", name);
-    }
-    localStorage.setItem("avatar", selectedImage);
-  }, [name, selectedImage]);
-
   const startGame = () => {
     if (name.trim() === "") {
       toast.error("Please enter a valid name!");
       return;
     }
-    navigate("/createRoom");
+
+    // Emit the createParty event using the socket from context
+    if (connected) {
+      navigate("/createRoom");
+      socket.emit("createParty", name);
+    } else {
+      toast.error("Unable to connect to the server. Please try again.");
+    }
   };
 
   return (
@@ -54,8 +56,8 @@ function ChooseAvatar() {
       >
         <FiArrowLeft size={30} />
       </a>
-      
-      <Logo></Logo>
+
+      <Logo />
 
       <div className=" p-6 rounded-lg  w-full max-w-lg flex flex-col items-center gap-6">
         <div className="relative w-40 flex items-center justify-center">
@@ -100,6 +102,7 @@ function ChooseAvatar() {
           <span className="text-xl font-semibold text-black">Start Game</span>
         </button>
       </div>
+
       <ToastContainer
         position="top-center"
         autoClose={5000}

@@ -2,7 +2,10 @@ import React, { useState, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FiClipboard, FiArrowLeft } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
 import ChooseAvatar from "./chooseAvtar";
+import Logo from "./logo";
+import { useWebSocket } from "../websocket";
 
 function CreateRoom() {
   const [roomCode, setRoomCode] = useState("");
@@ -10,22 +13,30 @@ function CreateRoom() {
   const username = localStorage.getItem("username");
   const avatar = localStorage.getItem("avatar");
 
+  const navigate = useNavigate();
+  const { socket, connected } = useWebSocket();
+
   useEffect(() => {
-    generateRoomCode();
-  }, []);
+    if (connected) {
+      socket.on("partyCreated", (data) => {
+        setRoomCode(data.currentPartyId);
+      });
+    }
 
-  function generateRoomCode() {
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setRoomCode(code);
-  }
+    return () => {
+      if (connected) {
+        socket.off("partyCreated");
+      }
+    };
+  }, [connected, socket]);
 
-  // Copy the code to clipboard
   const copyCodeToClipboard = () => {
-    navigator.clipboard.writeText("localhost:3000/" + roomCode);
-    toast.success("Code copied to clipboard!");
+    if (roomCode) {
+      navigator.clipboard.writeText(roomCode);
+      toast.success("Code copied to clipboard!");
+    }
   };
 
-  // Handle start game
   const startGame = () => {
     mode === ""
       ? toast.error("Select a game mode")
@@ -46,12 +57,12 @@ function CreateRoom() {
       className="min-h-screen flex flex-col items-center bg-cover bg-center p-4"
       style={{ backgroundImage: "url(/Assets/background.png)" }}
     >
-      <a
-        href="/multiplayer"
+      <button
+        onClick={() => navigate("/multiplayer")} 
         className="fixed left-4 rounded-2xl bg-[#d2d1d142]"
       >
         <FiArrowLeft size={30} />
-      </a>
+      </button>
 
       {username && avatar ? (
         <>
@@ -66,26 +77,7 @@ function CreateRoom() {
             </div>
           </div>
 
-          <h1 className="mt-10 mb-8 flex justify-center items-center w-full font-henny-penny">
-            <svg height="90" width="300">
-              <text
-                fontSize="80"
-                fontWeight="bold"
-                x="10"
-                y="80"
-                stroke="black"
-                strokeWidth="0.1"
-                fill="none"
-              >
-                <tspan fill="red">K</tspan>
-                <tspan fill="orange">u</tspan>
-                <tspan fill="yellow">i</tspan>
-                <tspan fill="green">z</tspan>
-                <tspan fill="blue">u</tspan>
-                <tspan fill="purple">?</tspan>
-              </text>
-            </svg>
-          </h1>
+          <Logo />
 
           <div className="bg-[#e3e3e337] p-6 rounded-lg shadow-2xl w-full max-w-lg mt-10 flex flex-col items-center gap-5">
             <h2 className="text-3xl font-bold text-center text-black mb-6">
@@ -122,7 +114,7 @@ function CreateRoom() {
                 >
                   {/* Button Text */}
                   <span className="text-xl font-semibold">
-                    Click to Copy Link
+                    Click to Copy Code
                   </span>
                   {/* Clipboard Icon */}
                   <FiClipboard size={30} />

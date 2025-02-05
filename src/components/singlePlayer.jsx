@@ -1,15 +1,22 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { FiArrowLeft } from "react-icons/fi";
 
 function SinglePlayer() {
+  const navigate = useNavigate();
+
   return (
     <div
       className="min-h-screen flex flex-col items-center bg-cover bg-center p-4"
       style={{ backgroundImage: "url(/Assets/background.png)" }}
     >
-      <a href="/" className="fixed left-4 rounded-2xl bg-[#d2d1d142]">
+      <button
+        onClick={() => navigate("/")}
+        className="fixed left-4 rounded-2xl bg-[#d2d1d142]"
+      >
         <FiArrowLeft size={30} />
-      </a>
+      </button>
+
       <h1 className="mt-10 mb-8 flex justify-center items-center w-full font-henny-penny">
         <svg height="90" width="300">
           <text
@@ -37,25 +44,29 @@ function SinglePlayer() {
         </h2>
 
         <div className="grid grid-cols-1 gap-6">
-          <a
-            href="/survival"
+          {/* Survival Mode */}
+          <button
+            onClick={() => navigate("/survival")}
             className="bg-gradient-to-r from-yellow-400 to-orange-400 text-black text-xl font-semibold px-10 py-6 rounded-lg shadow-lg hover:from-yellow-500 hover:to-orange-500 transform hover:scale-105 transition-all text-center"
           >
             🛡️ Survival Mode
-          </a>
+          </button>
 
-          <a
-            href="/timeAttack"
+          {/* Time Attack */}
+          <button
+            onClick={() => navigate("/timeAttack")}
             className="bg-gradient-to-r from-pink-400 to-purple-500 text-white text-xl font-semibold px-10 py-6 rounded-lg shadow-lg hover:from-pink-500 hover:to-purple-600 transform hover:scale-105 transition-all text-center"
           >
             ⏱️ Time Attack
-          </a>
-          <a
-            href="/classic"
+          </button>
+
+          {/* Classic Mode */}
+          <button
+            onClick={() => navigate("/classic")}
             className="bg-gradient-to-r from-blue-400 to-teal-500 text-white text-xl font-semibold px-10 py-6 rounded-lg shadow-lg hover:from-blue-500 hover:to-teal-600 transform hover:scale-105 transition-all text-center"
           >
             🕹️ Classic Mode
-          </a>
+          </button>
         </div>
       </div>
     </div>
