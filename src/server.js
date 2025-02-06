@@ -30,3 +30,18 @@ export const getQuiz = async (retryCount = 3) => {
     }
   }
 };
+
+export const getGeminiQuiz = async (data) => {
+  const { noOfQuestion, difficulty, topic } = data;
+  try {
+    const response = await axios.post("http://localhost:5000/quiz/questions", {
+      noOfQuestion,
+      difficulty,
+      topic,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching quiz:", error);
+    return [];
+  }
+};
