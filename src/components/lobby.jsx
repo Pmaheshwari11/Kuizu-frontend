@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FiClipboard, FiArrowLeft } from "react-icons/fi";
@@ -6,7 +6,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getGeminiQuiz } from "../server";
 import Logo from "./logo";
 import { useWebSocket } from "../websocket";
-import he from "he";
 
 function Lobby() {
   const { partyCode } = useParams();
@@ -23,10 +22,12 @@ function Lobby() {
   const [loading, setLoading] = useState(false);
   const [difficulty, setDifficulty] = useState("Medium");
   const [noOfQuestion, setNoOfQuestion] = useState(10);
-  const [timer, setTime] = useState(60);
+  const [time, setTime] = useState(5);
+  const [timer, setTimer] = useState(5);
   const [category, setCategory] = useState("All");
   const username = localStorage.getItem("username");
   const navigate = useNavigate();
+  const intervalRef = useRef(null); // Track interval
 
   useEffect(() => {
     if (connected) {
@@ -75,13 +76,15 @@ function Lobby() {
   useEffect(() => {
     const chatBox = document.getElementById("chatBox");
     if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+    if (messages.length >= 50) {
+      setMessages((prevMessages) => prevMessages.slice(1)); // Remove the first message
+    }
   }, [messages]);
 
   useEffect(() => {
     // Check if the current player is the host (assuming first player is host)
     const host = players[0]?.id === socket.id;
     setHost(host);
-    console.log(host);
   }, [players, socket.id]);
 
   function sendMessage() {
@@ -117,9 +120,16 @@ function Lobby() {
       sliderValue === 1 ? "Easy" : sliderValue === 2 ? "Medium" : "Hard"
     );
   };
-  const handleTimerChange = (e) => setTime(Number(e.target.value));
+  const handleTimerChange = (e) => {
+    setTime(Number(e.target.value));
+    setTimer(Number(e.target.value));
+  };
 
   async function getQuiz() {
+    if (!host) {
+      toast.error("Only host can start the game");
+      return;
+    }
     const data = {
       noOfQuestion: noOfQuestion,
       difficulty: difficulty,
@@ -155,6 +165,7 @@ function Lobby() {
     const points = 10;
     if (currentQuestion.correctOption === selectedOption) {
       toast.success("Correct Answer");
+      socket.emit("adminMessage", roomCode, username);
       socket.emit("updatePoints", roomCode, username, points);
     }
 
@@ -162,9 +173,39 @@ function Lobby() {
     if (questionNumber < questionsArray.length - 1) {
       setQuestionNumber(questionNumber + 1);
     } else {
-      isGameActive(false);
+      setIsGameActive(false);
+
+      setTimeout(() => {
+        setQuestionsArray([]); // Clear previous questions
+        setQuestionNumber(0); // Ensure we start from the first question
+        setMessages([]);
+        socket.emit("resetPoints", roomCode);
+      }, 100);
     }
+    setTimer(time);
   }
+
+  useEffect(() => {
+    if (!isGameActive) return; // Don't start the timer if the game isn't active
+
+    intervalRef.current = setInterval(() => {
+      setTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(intervalRef.current);
+          if (questionNumber < questionsArray.length - 1) {
+            setQuestionNumber((prevQ) => prevQ + 1);
+            return time; // Reset timer
+          } else {
+            setIsGameActive(false);
+            return 0; // Stop the timer
+          }
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(intervalRef.current); // Cleanup on re-renders
+  }, [isGameActive, questionNumber, time]); // Dependencies updated
 
   const currentQuestion = questionsArray[questionNumber];
 
@@ -228,33 +269,53 @@ function Lobby() {
 
                 <div className="grid grid-cols-3 gap-6">
                   <span
-                    onClick={() => handleModeChange("Survival")}
+                    onClick={() => (host ? handleModeChange("Survival") : null)}
                     className={`bg-gradient-to-r from-yellow-400 to-orange-400 text-xl font-semibold px-10 py-6 rounded-lg shadow-lg hover:from-yellow-500 hover:to-orange-500 transform hover:scale-105 transition-all text-center ${
                       mode === "Survival"
                         ? "border-[3px] border-black rounded-[10px] text-black"
                         : "text-white"
+                    }${
+                      host
+                        ? !loading
+                          ? null
+                          : "cursor-not-allowed"
+                        : "cursor-not-allowed"
                     }`}
                   >
                     🛡️ Survival Mode
                   </span>
 
                   <span
-                    onClick={() => handleModeChange("Time Attack")}
+                    onClick={() =>
+                      host ? handleModeChange("Time Attack") : null
+                    }
                     className={`bg-gradient-to-r from-pink-400 to-purple-500 text-xl font-semibold px-10 py-6 rounded-lg shadow-lg hover:from-pink-500 hover:to-purple-600 transform hover:scale-105 transition-all text-center ${
                       mode === "Time Attack"
                         ? "border-[3px] border-black rounded-[10px] text-black"
                         : "text-white"
+                    } ${
+                      host
+                        ? !loading
+                          ? null
+                          : "cursor-not-allowed"
+                        : "cursor-not-allowed"
                     }`}
                   >
                     ⏱️ Time Attack
                   </span>
 
                   <span
-                    onClick={() => handleModeChange("Classic")}
+                    onClick={() => (host ? handleModeChange("Classic") : null)}
                     className={`bg-gradient-to-r from-blue-400 to-teal-500 text-xl font-semibold px-10 py-6 rounded-lg shadow-lg hover:from-blue-500 hover:to-teal-600 transform hover:scale-105 transition-all text-center ${
                       mode === "Classic"
                         ? "border-[3px] border-black rounded-[10px] text-black"
                         : "text-white"
+                    } ${
+                      host
+                        ? !loading
+                          ? null
+                          : "cursor-not-allowed"
+                        : "cursor-not-allowed"
                     }`}
                   >
                     🕹️ Classic Mode
@@ -273,8 +334,11 @@ function Lobby() {
                     <select
                       id="category"
                       value={category}
+                      disabled={!host}
                       onChange={handleCategoryChange}
-                      className=" text-black font-semibold px-6 py-3 rounded-lg shadow-lg transform hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={` text-black font-semibold px-6 py-3 rounded-lg shadow-lg transform ${
+                        host ? "hover:scale-105" : "cursor-not-allowed"
+                      } transition-all focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     >
                       <option value="All">All</option>
                       <option value="Sports">Sports</option>
@@ -297,8 +361,11 @@ function Lobby() {
                     <select
                       id="questions"
                       value={noOfQuestion}
+                      disabled={!host}
                       onChange={handleNoOfQuestionsChange}
-                      className=" text-black font-semibold px-6 py-3 rounded-lg shadow-lg transform hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={` text-black font-semibold px-6 py-3 rounded-lg shadow-lg transform ${
+                        host ? "hover:scale-105" : "cursor-not-allowed"
+                      } transition-all focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     >
                       <option value="10">10</option>
                       <option value="15">15</option>
@@ -318,21 +385,16 @@ function Lobby() {
                     </label>
                     <select
                       id="timer"
-                      value={timer}
+                      value={time}
+                      disabled={!host}
                       onChange={handleTimerChange}
-                      className=" text-black font-semibold px-6 py-3 rounded-lg shadow-lg transform hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={` text-black font-semibold px-6 py-3 rounded-lg shadow-lg transform ${
+                        host ? "hover:scale-105" : "cursor-not-allowed"
+                      } transition-all focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     >
+                      <option value="20">5</option>
                       <option value="10">10</option>
                       <option value="15">15</option>
-                      <option value="20">20</option>
-                      <option value="25">25</option>
-                      <option value="30">30</option>
-                      <option value="35">35</option>
-                      <option value="40">40</option>
-                      <option value="45">45</option>
-                      <option value="50">50</option>
-                      <option value="55">55</option>
-                      <option value="60">60</option>
                     </select>
                   </div>
 
@@ -350,6 +412,7 @@ function Lobby() {
                       min="1"
                       max="3"
                       step="1"
+                      disabled={!host}
                       value={
                         difficulty === "Easy"
                           ? 1
@@ -358,7 +421,9 @@ function Lobby() {
                           : 3
                       }
                       onChange={handleDifficultyChange}
-                      className="slider rounded-lg appearance-none"
+                      className={`slider rounded-lg appearance-none ${
+                        host ? null : "cursor-not-allowed"
+                      }`}
                     />
                     <div className="flex justify-between mt-2">
                       <span>Easy</span>
@@ -385,8 +450,11 @@ function Lobby() {
                     {/* Start Game Button */}
                     <button
                       onClick={getQuiz}
-                      readOnly={!host}
-                      className="bg-green-500 text-white font-bold px-10 py-4 rounded-lg shadow-lg hover:bg-green-600 transform hover:scale-105 transition-all"
+                      className={`${
+                        host
+                          ? "bg-green-500 hover:bg-green-600 "
+                          : "bg-green-800 cursor-not-allowed"
+                      } text-white font-bold px-10 py-4 rounded-lg shadow-lg transform hover:scale-105 transition-all`}
                     >
                       {loading ? "Starting..." : "Start Game"}
                     </button>
@@ -403,7 +471,13 @@ function Lobby() {
                   <h2 className="text-lg font-bold text-blue-600">Score</h2>
                   <span className="text-3xl font-extrabold text-gray-900"></span>
                 </div>
-                <div className="border-l-2 border-gray-300"></div>
+                <div
+                  className={`text-3xl font-extrabold ${
+                    timer <= time * 0.75 ? "text-red-500" : "text-green-500"
+                  }`}
+                >
+                  {timer}
+                </div>
                 <div className="flex flex-col items-center">
                   <h3 className="text-lg font-bold text-green-600">
                     Max Score
@@ -452,8 +526,16 @@ function Lobby() {
             className="h-64 overflow-y-auto bg-white p-4 rounded-lg mb-4"
           >
             {messages.map((msg, index) => (
-              <p key={index} className="text-black break-words">
-                <strong>{msg.sender}:</strong> {msg.message}
+              <p
+                key={index}
+                className={`text-black break-words ${
+                  msg.sender === "Kuizu" ? " text-green-500" : null
+                }`}
+              >
+                <strong>
+                  {msg.sender === "Kuizu" ? null : msg.sender + ":"}
+                </strong>{" "}
+                {msg.message}
               </p>
             ))}
           </div>

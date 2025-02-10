@@ -40,7 +40,11 @@ function ChooseAvatar() {
       return;
     }
 
-    // Emit the createParty event using the socket from context
+    if (name.toLowerCase() === "kuizu") {
+      toast.error("Your name cannot be Kuizu");
+      return;
+    }
+
     localStorage.setItem("username", name);
     localStorage.setItem("avatar", selectedImage);
     if (from === "create") {
