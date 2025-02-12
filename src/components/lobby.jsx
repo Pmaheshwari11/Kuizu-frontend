@@ -52,6 +52,37 @@ function Lobby() {
         setQuestionsArray(questionsList); // Set the fetched questions
         setIsGameActive(true); // Start the game
       });
+
+      socket.on("syncTimer", (newTime) => {
+        setTime(newTime);
+        setTimer(newTime);
+      }); 
+      
+      socket.on("syncMode", (newMode) =>{
+        setMode(newMode);
+      });
+
+      socket.on("syncCategory", (newCategory) => {
+        setCategory(newCategory);
+      });
+
+      socket.on("syncQuestions", (noOfQuestion) => {
+        setNoOfQuestion(noOfQuestion);
+      });  
+      
+      socket.on("syncTimer", (newTime) => {
+        setTimer(newTime);
+      });
+  
+      socket.on("nextQuestion", (newQuestionIndex) => {
+        setQuestionNumber(newQuestionIndex);
+        setTimer(time); // Reset timer
+      });
+  
+      socket.on("gameOver", () => {
+        setIsGameActive(false);
+        toast.info("Game Over!");
+      });
     }
 
     return () => {
@@ -109,21 +140,38 @@ function Lobby() {
     "/Assets/avatar6.png",
   ];
 
-  const handleModeChange = (newMode) => setMode(newMode);
-  const handleCategoryChange = (e) => setCategory(e.target.value);
-  const handleNoOfQuestionsChange = (e) =>
+  const handleModeChange = (newMode) => {
+    setMode(newMode);
+
+    socket.emit("updateMode", roomCode, newMode);
+  };
+
+  const handleCategoryChange = (e) => {
+    setCategory(e.target.value);
+    socket.emit("updateCategory", roomCode, e.target.value);
+  };
+
+  const handleNoOfQuestionsChange = (e) =>{
     setNoOfQuestion(Number(e.target.value));
+    socket.emit("updateQuestions", roomCode, e.target.value);
+  }
+
   const handleDifficultyChange = (e) => {
     const sliderValue = Number(e.target.value);
-    // Update difficulty as a string based on slider value
-    setDifficulty(
-      sliderValue === 1 ? "Easy" : sliderValue === 2 ? "Medium" : "Hard"
-    );
+    const newDifficulty =
+      sliderValue === 1 ? "Easy" : sliderValue === 2 ? "Medium" : "Hard";
+  
+    setDifficulty(newDifficulty);
   };
+  
+
   const handleTimerChange = (e) => {
-    setTime(Number(e.target.value));
-    setTimer(Number(e.target.value));
-  };
+    const newTime = Number(e.target.value);
+    setTime(newTime);
+    setTimer(newTime);
+  
+    socket.emit("updateTimer", roomCode, newTime);
+  };  
 
   async function getQuiz() {
     if (!host) {
@@ -161,29 +209,18 @@ function Lobby() {
     }
   }
 
-  function handleAnswer(selectedOption) {
+  const handleAnswer = (selectedOption) => {
+    if (!isGameActive) return;
+
     const points = 10;
-    if (currentQuestion.correctOption === selectedOption) {
+    if (questionsArray[questionNumber].correctOption === selectedOption) {
       toast.success("Correct Answer");
       socket.emit("adminMessage", roomCode, username);
       socket.emit("updatePoints", roomCode, username, points);
     }
 
-    // Move to the next question
-    if (questionNumber < questionsArray.length - 1) {
-      setQuestionNumber(questionNumber + 1);
-    } else {
-      setIsGameActive(false);
-
-      setTimeout(() => {
-        setQuestionsArray([]); // Clear previous questions
-        setQuestionNumber(0); // Ensure we start from the first question
-        setMessages([]);
-        socket.emit("resetPoints", roomCode);
-      }, 100);
-    }
-    setTimer(time);
-  }
+    socket.emit("playerAnswered", roomCode, username);
+  };
 
   useEffect(() => {
     if (!isGameActive) return; // Don't start the timer if the game isn't active
