@@ -26,6 +26,8 @@ function Lobby() {
   const [timer, setTimer] = useState(5);
   const [category, setCategory] = useState("All");
   const username = localStorage.getItem("username");
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [isAnswered, setIsAnswered] = useState(false);
   const navigate = useNavigate();
   const intervalRef = useRef(null); // Track interval
 
@@ -210,17 +212,20 @@ function Lobby() {
   }
 
   const handleAnswer = (selectedOption) => {
-    if (!isGameActive) return;
-
+    if (!isGameActive || isAnswered) return; // Prevent multiple answers
+  
+    setSelectedOption(selectedOption); // Store selected option
+    setIsAnswered(true); // Disable further answering
+  
     const points = 10;
     if (questionsArray[questionNumber].correctOption === selectedOption) {
       toast.success("Correct Answer");
       socket.emit("adminMessage", roomCode, username);
       socket.emit("updatePoints", roomCode, username, points);
     }
-
+  
     socket.emit("playerAnswered", roomCode, username);
-  };
+  };  
 
   useEffect(() => {
     if (!isGameActive) return; // Don't start the timer if the game isn't active
@@ -231,9 +236,15 @@ function Lobby() {
           clearInterval(intervalRef.current);
           if (questionNumber < questionsArray.length - 1) {
             setQuestionNumber((prevQ) => prevQ + 1);
+            setSelectedOption(null);
+            setIsAnswered(false);
             return time; // Reset timer
           } else {
             setIsGameActive(false);
+            setTimer(time);
+            setSelectedOption(null);
+            setIsAnswered(false);
+            setQuestionNumber(0);
             return 0; // Stop the timer
           }
         }
@@ -539,15 +550,31 @@ function Lobby() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                {currentQuestion.options.map((option, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleAnswer(index + 1)} // Passing option number (1-4)
-                    className="bg-gray-200 py-3 px-4 rounded-lg shadow-md hover:bg-gray-300"
-                  >
-                    {option}
-                  </button>
-                ))}
+                {currentQuestion.options.map((option, index) => {
+                  const optionNumber = index + 1;
+                  const isCorrect = optionNumber === currentQuestion.correctOption;
+                  const isSelected = optionNumber === selectedOption;
+
+                  let bgColor = "bg-gray-200 hover:bg-gray-300";
+                  if (isAnswered) {
+                    if (isSelected) {
+                      bgColor = isCorrect ? "bg-green-500" : "bg-red-500";
+                    } else if (isCorrect) {
+                      bgColor = "bg-green-500"; // Show correct option
+                    }
+                  }
+
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => handleAnswer(optionNumber)}
+                      className={`py-3 px-4 rounded-lg shadow-md ${bgColor}`}
+                      disabled={isAnswered} // Disable after selecting an option
+                    >
+                      {option}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </>
