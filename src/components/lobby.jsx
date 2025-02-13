@@ -58,9 +58,9 @@ function Lobby() {
       socket.on("syncTimer", (newTime) => {
         setTime(newTime);
         setTimer(newTime);
-      }); 
-      
-      socket.on("syncMode", (newMode) =>{
+      });
+
+      socket.on("syncMode", (newMode) => {
         setMode(newMode);
       });
 
@@ -70,17 +70,21 @@ function Lobby() {
 
       socket.on("syncQuestions", (noOfQuestion) => {
         setNoOfQuestion(noOfQuestion);
-      });  
-      
+      });
+
+      socket.on("syncDifficulty", (difficulty) => {
+        setDifficulty(difficulty);
+      });
+
       socket.on("syncTimer", (newTime) => {
         setTimer(newTime);
       });
-  
+
       socket.on("nextQuestion", (newQuestionIndex) => {
         setQuestionNumber(newQuestionIndex);
         setTimer(time); // Reset timer
       });
-  
+
       socket.on("gameOver", () => {
         setIsGameActive(false);
         toast.info("Game Over!");
@@ -153,27 +157,27 @@ function Lobby() {
     socket.emit("updateCategory", roomCode, e.target.value);
   };
 
-  const handleNoOfQuestionsChange = (e) =>{
+  const handleNoOfQuestionsChange = (e) => {
     setNoOfQuestion(Number(e.target.value));
     socket.emit("updateQuestions", roomCode, e.target.value);
-  }
+  };
 
   const handleDifficultyChange = (e) => {
     const sliderValue = Number(e.target.value);
     const newDifficulty =
       sliderValue === 1 ? "Easy" : sliderValue === 2 ? "Medium" : "Hard";
-  
+
     setDifficulty(newDifficulty);
+    socket.emit("updateDifficulty", roomCode, Number(e.target.value));
   };
-  
 
   const handleTimerChange = (e) => {
     const newTime = Number(e.target.value);
     setTime(newTime);
     setTimer(newTime);
-  
+
     socket.emit("updateTimer", roomCode, newTime);
-  };  
+  };
 
   async function getQuiz() {
     if (!host) {
@@ -213,19 +217,19 @@ function Lobby() {
 
   const handleAnswer = (selectedOption) => {
     if (!isGameActive || isAnswered) return; // Prevent multiple answers
-  
+
     setSelectedOption(selectedOption); // Store selected option
     setIsAnswered(true); // Disable further answering
-  
+
     const points = 10;
     if (questionsArray[questionNumber].correctOption === selectedOption) {
       toast.success("Correct Answer");
       socket.emit("adminMessage", roomCode, username);
       socket.emit("updatePoints", roomCode, username, points);
     }
-  
+
     socket.emit("playerAnswered", roomCode, username);
-  };  
+  };
 
   useEffect(() => {
     if (!isGameActive) return; // Don't start the timer if the game isn't active
@@ -242,6 +246,7 @@ function Lobby() {
           } else {
             setIsGameActive(false);
             setTimer(time);
+            setMessages([]);
             setSelectedOption(null);
             setIsAnswered(false);
             setQuestionNumber(0);
@@ -552,7 +557,8 @@ function Lobby() {
               <div className="grid grid-cols-2 gap-4">
                 {currentQuestion.options.map((option, index) => {
                   const optionNumber = index + 1;
-                  const isCorrect = optionNumber === currentQuestion.correctOption;
+                  const isCorrect =
+                    optionNumber === currentQuestion.correctOption;
                   const isSelected = optionNumber === selectedOption;
 
                   let bgColor = "bg-gray-200 hover:bg-gray-300";
