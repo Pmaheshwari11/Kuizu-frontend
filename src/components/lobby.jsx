@@ -6,6 +6,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getGeminiQuiz } from "../server";
 import Logo from "./logo";
 import { useWebSocket } from "../websocket";
+import Waiting from "./waitingScreen";
 
 function Lobby() {
   const { partyCode } = useParams();
@@ -17,7 +18,7 @@ function Lobby() {
   const [copied, setCopied] = useState(false);
   const [questionsArray, setQuestionsArray] = useState([]);
   const [questionNumber, setQuestionNumber] = useState(0);
-  const [isGameActive, setIsGameActive] = useState(false);
+  const [gameState, setGameState] = useState("newGame");
   const [host, setHost] = useState(false);
   const [loading, setLoading] = useState(false);
   const [difficulty, setDifficulty] = useState("Medium");
@@ -42,7 +43,7 @@ function Lobby() {
       socket.on("receiveMessage", (data) => {
         setMessages((prevMessages) => [
           ...prevMessages,
-          { sender: data.sender, message: data.message },
+          { sender: data.sender, code: data.code, message: data.message },
         ]);
       });
 
@@ -52,7 +53,7 @@ function Lobby() {
 
       socket.on("questionsUpdated", (questionsList) => {
         setQuestionsArray(questionsList); // Set the fetched questions
-        setIsGameActive(true); // Start the game
+        setGameState("started");
       });
 
       socket.on("syncTimer", (newTime) => {
@@ -84,10 +85,8 @@ function Lobby() {
         setQuestionNumber(newQuestionIndex);
         setTimer(time); // Reset timer
       });
-
-      socket.on("gameOver", () => {
-        setIsGameActive(false);
-        toast.info("Game Over!");
+      socket.on("newGame", () => {
+        setGameState("newGame");
       });
     }
 
@@ -97,6 +96,7 @@ function Lobby() {
         socket.off("receiveMessage");
         socket.off("pointsUpdated");
         socket.off("questionsUpdated");
+        socket.off("newGame");
       }
     };
   }, [connected, socket, roomCode]);
@@ -144,6 +144,17 @@ function Lobby() {
     "/Assets/avatar4.png",
     "/Assets/avatar5.png",
     "/Assets/avatar6.png",
+    "/Assets/avatar7.png",
+    "/Assets/avatar8.png",
+    "/Assets/avatar9.png",
+    "/Assets/avatar10.png",
+    "/Assets/avatar11.png",
+    "/Assets/avatar12.png",
+    "/Assets/avatar13.png",
+    "/Assets/avatar14.png",
+    "/Assets/avatar15.png",
+    "/Assets/avatar16.png",
+    "/Assets/avatar17.png",
   ];
 
   const handleModeChange = (newMode) => {
@@ -216,7 +227,7 @@ function Lobby() {
   }
 
   const handleAnswer = (selectedOption) => {
-    if (!isGameActive || isAnswered) return; // Prevent multiple answers
+    if (gameState !== "started") return; // Prevent multiple answers
 
     setSelectedOption(selectedOption); // Store selected option
     setIsAnswered(true); // Disable further answering
@@ -231,8 +242,12 @@ function Lobby() {
     socket.emit("playerAnswered", roomCode, username);
   };
 
+  const handleGameOver = () => {
+    socket.emit("gameOver", roomCode);
+  };
+
   useEffect(() => {
-    if (!isGameActive) return; // Don't start the timer if the game isn't active
+    if (gameState !== "started") return; // Don't start the timer if the game isn't active
 
     intervalRef.current = setInterval(() => {
       setTimer((prev) => {
@@ -244,7 +259,7 @@ function Lobby() {
             setIsAnswered(false);
             return time; // Reset timer
           } else {
-            setIsGameActive(false);
+            setGameState("waiting");
             setTimer(time);
             setMessages([]);
             setSelectedOption(null);
@@ -258,7 +273,7 @@ function Lobby() {
     }, 1000);
 
     return () => clearInterval(intervalRef.current); // Cleanup on re-renders
-  }, [isGameActive, questionNumber, time]); // Dependencies updated
+  }, [gameState, questionNumber, time]); // Dependencies updated
 
   const currentQuestion = questionsArray[questionNumber];
 
@@ -311,7 +326,7 @@ function Lobby() {
             ))}
           </ul>
         </div>
-        {!isGameActive ? (
+        {gameState === "newGame" ? (
           <>
             {/* Game Settings and Chat on Right */}
             <div className="flex flex-col gap-5 justify-end">
@@ -516,7 +531,7 @@ function Lobby() {
               </div>
             </div>
           </>
-        ) : (
+        ) : gameState === "started" ? (
           <>
             <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg text-center flex flex-col space-y-6">
               <div className="flex justify-between items-center bg-gray-100 p-4 rounded-lg shadow-inner">
@@ -530,14 +545,6 @@ function Lobby() {
                   }`}
                 >
                   {timer}
-                </div>
-                <div className="flex flex-col items-center">
-                  <h3 className="text-lg font-bold text-green-600">
-                    Max Score
-                  </h3>
-                  <span className="text-3xl font-extrabold text-gray-900">
-                    100
-                  </span>
                 </div>
               </div>
 
@@ -584,6 +591,12 @@ function Lobby() {
               </div>
             </div>
           </>
+        ) : (
+          <Waiting
+            players={players}
+            handleGameOver={handleGameOver}
+            host={host}
+          />
         )}
 
         {/* Chat Box */}
@@ -599,7 +612,15 @@ function Lobby() {
               <p
                 key={index}
                 className={`text-black break-words ${
-                  msg.sender === "Kuizu" ? " text-green-500" : null
+                  msg.code === "correct"
+                    ? " text-green-500"
+                    : msg.code === "joined"
+                    ? "text-pink-500"
+                    : msg.code === "left"
+                    ? "text-red-500"
+                    : msg.code === "newHost"
+                    ? "text-orange-500"
+                    : null
                 }`}
               >
                 <strong>

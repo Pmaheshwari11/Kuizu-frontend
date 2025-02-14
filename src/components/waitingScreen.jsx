@@ -1,30 +1,35 @@
 import React from "react";
 
-function Waiting({ players, setIsGameActive, host }) {
+function Waiting({ players, handleGameOver, host }) {
+  const medals = ["🥇", "🥈", "🥉"];
   return (
-    <div className="flex flex-col gap-5 justify-end">
-      <div className="bg-[#e3e3e337] p-6 rounded-lg shadow-2xl w-full max-w-lg mt-10 flex flex-col items-center gap-5">
+    <div className="flex flex-col gap-5 justify-end min-w-96">
+      <div className="bg-[#e3e3e337] p-6 rounded-lg shadow-2xl min-w-lg  mt-10 flex flex-col items-center gap-5">
         <h2 className="text-3xl font-bold text-center text-black mb-6">
           Leaderboard
         </h2>
 
-        <div className="grid grid-cols-3 gap-6">
+        <div className="w-full space-y-4">
           {players
-            .sort((a, b) => b.score - a.score) // Sorting players by score (highest first)
+            .sort((a, b) => b.score - a.score)
             .map((player, index) => (
               <div
                 key={index}
-                className="bg-white p-4 rounded-lg shadow-md text-center"
+                className="flex items-center justify-between bg-gray-50 p-4 rounded-lg shadow-md border border-gray-200"
               >
-                <p className="text-lg font-bold text-black">{player.name}</p>
-                <p className="text-sm text-gray-600">Score: {player.points}</p>
+                <p className="text-lg font-semibold text-gray-700">
+                  {index < 3 ? medals[index] : `#${index + 1}`} {player.name}
+                </p>
+                <p className="text-md text-gray-500 font-medium">
+                  Score: {player.points}
+                </p>
               </div>
             ))}
         </div>
 
         <div className="flex items-center gap-5 justify-center text-center text-white mt-6">
           <button
-            onClick={() => setIsGameActive(false)}
+            onClick={() => handleGameOver()}
             disabled={!host}
             className={`${
               host
