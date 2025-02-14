@@ -550,7 +550,7 @@ function Lobby() {
               </div>
 
               <h4 className="text-2xl font-extrabold text-gray-800 mt-4">
-                Question {questionNumber + 1} of 10
+                Question {questionNumber + 1} of {noOfQuestion}
               </h4>
 
               <div className="bg-blue-50 p-6 rounded-lg shadow-md border border-blue-300">
