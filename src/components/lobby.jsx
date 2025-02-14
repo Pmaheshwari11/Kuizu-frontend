@@ -23,8 +23,8 @@ function Lobby() {
   const [loading, setLoading] = useState(false);
   const [difficulty, setDifficulty] = useState("Medium");
   const [noOfQuestion, setNoOfQuestion] = useState(10);
-  const [time, setTime] = useState(5);
-  const [timer, setTimer] = useState(5);
+  const [time, setTime] = useState(10);
+  const [timer, setTimer] = useState(10);
   const [category, setCategory] = useState("All");
   const username = localStorage.getItem("username");
   const [selectedOption, setSelectedOption] = useState(null);
@@ -336,7 +336,7 @@ function Lobby() {
                   Choose Your Fun!
                 </h2>
 
-                <div className="grid grid-cols-3 gap-6">
+                {/* <div className="grid grid-cols-3 gap-6">
                   <span
                     onClick={() => (host ? handleModeChange("Survival") : null)}
                     className={`bg-gradient-to-r from-yellow-400 to-orange-400 text-xl font-semibold px-10 py-6 rounded-lg shadow-lg hover:from-yellow-500 hover:to-orange-500 transform hover:scale-105 transition-all text-center ${
@@ -389,7 +389,7 @@ function Lobby() {
                   >
                     🕹️ Classic Mode
                   </span>
-                </div>
+                </div> */}
 
                 <div className="flex flex-col gap-6 w-full">
                   {/* Category Dropdown */}
@@ -464,6 +464,7 @@ function Lobby() {
                       <option value="20">5</option>
                       <option value="10">10</option>
                       <option value="15">15</option>
+                      <option value="20">20</option>
                     </select>
                   </div>
 
@@ -536,10 +537,6 @@ function Lobby() {
           <>
             <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg text-center flex flex-col space-y-6">
               <div className="flex justify-between items-center bg-gray-100 p-4 rounded-lg shadow-inner">
-                <div className="flex flex-col items-center">
-                  <h2 className="text-lg font-bold text-blue-600">Score</h2>
-                  <span className="text-3xl font-extrabold text-gray-900"></span>
-                </div>
                 <div
                   className={`text-3xl font-extrabold ${
                     timer <= time * 0.75 ? "text-red-500" : "text-green-500"
