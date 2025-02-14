@@ -35,8 +35,9 @@ function Lobby() {
   useEffect(() => {
     if (connected) {
       // Listen to player updates and update the player list
-      socket.on("partyUpdated", (players) => {
-        setPlayers(players); // Update player list state
+      socket.on("partyUpdated", (party) => {
+        setPlayers(party.players); // Update player list state
+        setHost(party.host === socket.id);
       });
 
       // Listen to new messages and update the chat messages
@@ -119,12 +120,6 @@ function Lobby() {
       setMessages((prevMessages) => prevMessages.slice(1)); // Remove the first message
     }
   }, [messages]);
-
-  useEffect(() => {
-    // Check if the current player is the host (assuming first player is host)
-    const host = players[0]?.id === socket.id;
-    setHost(host);
-  }, [players, socket.id]);
 
   function sendMessage() {
     const messageInput = document.getElementById("messageInput");
