@@ -3,7 +3,7 @@ import { io } from 'socket.io-client';
 
 const WebSocketContext = createContext();
 
-const SERVER_URL = 'http://localhost:5000'; // Replace with your backend URL
+const SERVER_URL = 'https://kuizu-io.onrender.com'; // Replace with your backend URL
 
 const socket = io(SERVER_URL, {
   autoConnect: false, // Prevent auto connect
