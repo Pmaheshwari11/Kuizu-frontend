@@ -86,6 +86,8 @@ function Lobby() {
         setTimer(time); // Reset timer
       });
       socket.on("newGame", () => {
+        setQuestionsArray([]);
+        setQuestionNumber(0);
         setGameState("newGame");
       });
     }
