@@ -34,7 +34,7 @@ export const getQuiz = async (retryCount = 3) => {
 export const getGeminiQuiz = async (data) => {
   const { noOfQuestion, difficulty, topic } = data;
   try {
-    const response = await axios.post("http://localhost:5000/quiz/questions", {
+    const response = await axios.post("https://kuizu-io.onrender.com", {
       noOfQuestion,
       difficulty,
       topic,
