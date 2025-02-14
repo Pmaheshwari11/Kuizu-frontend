@@ -244,6 +244,7 @@ function Lobby() {
 
   const handleGameOver = () => {
     socket.emit("gameOver", roomCode);
+    socket.emit("resetPoints", roomCode);
   };
 
   useEffect(() => {

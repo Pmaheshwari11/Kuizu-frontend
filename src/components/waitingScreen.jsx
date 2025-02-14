@@ -11,7 +11,7 @@ function Waiting({ players, handleGameOver, host }) {
 
         <div className="w-full space-y-4">
           {players
-            .sort((a, b) => b.score - a.score)
+            .sort((a, b) => b.points - a.points)
             .map((player, index) => (
               <div
                 key={index}
