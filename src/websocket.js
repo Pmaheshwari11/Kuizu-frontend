@@ -1,13 +1,13 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { io } from 'socket.io-client';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { io } from "socket.io-client";
 
 const WebSocketContext = createContext();
 
-const SERVER_URL = 'https://kuizu-io.onrender.com'; // Replace with your backend URL
+const SERVER_URL = "https://kuizu-io.onrender.com"; // Replace with your backend URL
 
 const socket = io(SERVER_URL, {
   autoConnect: false, // Prevent auto connect
-  transports: ['websocket'], // Use WebSocket transport
+  transports: ["websocket"], // Use WebSocket transport
 });
 
 export const WebSocketProvider = ({ children }) => {
@@ -18,20 +18,20 @@ export const WebSocketProvider = ({ children }) => {
     socket.connect();
 
     // Listen for socket connection and disconnection
-    socket.on('connect', () => {
-      console.log('✅ Connected to WebSocket server:', socket.id);
+    socket.on("connect", () => {
+      console.log("✅ Connected to WebSocket server:", socket.id);
       setConnected(true);
     });
 
-    socket.on('disconnect', () => {
-      console.log('❌ Disconnected from WebSocket server');
+    socket.on("disconnect", () => {
+      console.log("❌ Disconnected from WebSocket server");
       setConnected(false);
     });
 
     // Cleanup on unmount
     return () => {
-      socket.off('connect');
-      socket.off('disconnect');
+      socket.off("connect");
+      socket.off("disconnect");
     };
   }, []);
 

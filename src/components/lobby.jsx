@@ -91,6 +91,13 @@ function Lobby() {
         setQuestionNumber(0);
         setGameState("newGame");
       });
+
+      socket.on("kicked", (data) => {
+        toast.error(data.message);
+        setTimeout(() => {
+          navigate("/");
+        }, 1500);
+      });
     }
 
     return () => {
@@ -100,6 +107,7 @@ function Lobby() {
         socket.off("pointsUpdated");
         socket.off("questionsUpdated");
         socket.off("newGame");
+        socket.off("kicked");
       }
     };
   }, [connected, socket, roomCode]);
@@ -185,6 +193,10 @@ function Lobby() {
     setTimer(newTime);
 
     socket.emit("updateTimer", roomCode, newTime);
+  };
+
+  const handleKick = (playerId) => {
+    socket.emit("kickPlayer", roomCode, playerId);
   };
 
   async function getQuiz() {
@@ -300,25 +312,36 @@ function Lobby() {
           <ul id="playerList" className="text-black">
             {players.map((player, index) => (
               <li key={player.id || player.name} className="text-lg mb-4">
-                <div className="flex items-center justify-start gap-6 bg-white p-4 rounded-3xl shadow-lg transform transition-all duration-300 hover:scale-105">
-                  <img
-                    src={images[player.img]}
-                    alt="Avatar"
-                    className="w-16 h-16 object-cover rounded-full"
-                  />
-                  <div className="flex flex-col">
-                    <span className="text-xl font-semibold text-black">
-                      {player.name}
-                      {index === 0 && (
-                        <span className="ml-2 text-blue-500 font-medium">
-                          (Host)
-                        </span>
-                      )}
-                    </span>
-                    <span className="text-gray-700 text-lg">
-                      Points: {player.points}
-                    </span>
+                <div className="flex items-center justify-between gap-6 bg-white p-4 rounded-3xl shadow-lg transform transition-all duration-300 hover:scale-105">
+                  <div className="flex items-center gap-6">
+                    <img
+                      src={images[player.img]}
+                      alt="Avatar"
+                      className="w-16 h-16 object-cover rounded-full"
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-xl font-semibold text-black">
+                        {player.name}
+                        {index === 0 && (
+                          <span className="ml-2 text-blue-500 font-medium">
+                            (Host)
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-gray-700 text-lg">
+                        Points: {player.points}
+                      </span>
+                    </div>
                   </div>
+
+                  {host && player.id !== socket.id && (
+                    <button
+                      onClick={() => handleKick(player.id)}
+                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow-md transition duration-200"
+                    >
+                      Kick
+                    </button>
+                  )}
                 </div>
               </li>
             ))}
@@ -611,7 +634,7 @@ function Lobby() {
                     ? " text-green-500"
                     : msg.code === "joined"
                     ? "text-pink-500"
-                    : msg.code === "left"
+                    : msg.code === "left" || msg.code === "kick"
                     ? "text-red-500"
                     : msg.code === "newHost"
                     ? "text-orange-500"
