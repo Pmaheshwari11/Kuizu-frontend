@@ -1,17 +1,22 @@
 import React, { useState, useEffect, useRef } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FiClipboard, FiArrowLeft } from "react-icons/fi";
+import { FiArrowLeft } from "react-icons/fi";
 import { useNavigate, useParams } from "react-router-dom";
 import { getGeminiQuiz } from "../server";
 import Logo from "./logo";
 import { useWebSocket } from "../websocket";
 import Waiting from "./waitingScreen";
+import MobileChatNPlayer from "./mobileChat";
+import ChatBox from "./chatbox";
+import GameSetting from "./gameSetting";
+import QuizWindow from "./quizWindow";
+import PlayerList from "./playerList";
+import images from "./images";
 
 function Lobby() {
   const { partyCode } = useParams();
   const roomCode = atob(partyCode);
-  const [mode, setMode] = useState("Survival");
   const [players, setPlayers] = useState([]); // State to store player list
   const [messages, setMessages] = useState([]); // State to store chat messages
   const { socket, connected } = useWebSocket();
@@ -60,10 +65,6 @@ function Lobby() {
       socket.on("syncTimer", (newTime) => {
         setTime(newTime);
         setTimer(newTime);
-      });
-
-      socket.on("syncMode", (newMode) => {
-        setMode(newMode);
       });
 
       socket.on("syncCategory", (newCategory) => {
@@ -129,44 +130,16 @@ function Lobby() {
     }
   }, [messages]);
 
-  function sendMessage() {
-    const messageInput = document.getElementById("messageInput");
-    const message = messageInput.value.trim();
+  function sendMessage(message) {
+    const trimmedMessage = message.trim();
 
-    if (!roomCode || !message) {
+    if (!roomCode || !trimmedMessage) {
       alert("You must be in a party to send messages.");
       return;
     }
 
-    socket.emit("sendMessage", roomCode, username, message);
-    messageInput.value = ""; // Clear input after sending
+    socket.emit("sendMessage", roomCode, username, trimmedMessage);
   }
-
-  const images = [
-    "/Assets/avatar1.png",
-    "/Assets/avatar2.png",
-    "/Assets/avatar3.png",
-    "/Assets/avatar4.png",
-    "/Assets/avatar5.png",
-    "/Assets/avatar6.png",
-    "/Assets/avatar7.png",
-    "/Assets/avatar8.png",
-    "/Assets/avatar9.png",
-    "/Assets/avatar10.png",
-    "/Assets/avatar11.png",
-    "/Assets/avatar12.png",
-    "/Assets/avatar13.png",
-    "/Assets/avatar14.png",
-    "/Assets/avatar15.png",
-    "/Assets/avatar16.png",
-    "/Assets/avatar17.png",
-  ];
-
-  const handleModeChange = (newMode) => {
-    setMode(newMode);
-
-    socket.emit("updateMode", roomCode, newMode);
-  };
 
   const handleCategoryChange = (e) => {
     setCategory(e.target.value);
@@ -240,8 +213,12 @@ function Lobby() {
 
     setSelectedOption(selectedOption); // Store selected option
     setIsAnswered(true); // Disable further answering
+    const timeLeft = time - timer;
 
-    const points = 10;
+    const maxPoints = 100; // Maximum possible points
+    const minPoints = 30; // Minimum points for correct answer
+    const timeFactor = timeLeft / time; // Fraction of time left (0 to 1)
+    const points = Math.round(minPoints + (maxPoints - minPoints) * timeFactor);
     if (questionsArray[questionNumber].correctOption === selectedOption) {
       toast.success("Correct Answer");
       socket.emit("adminMessage", roomCode, username);
@@ -303,311 +280,47 @@ function Lobby() {
       </button>
       <Logo />
 
-      <div className="flex gap-10 w-full max-w-screen-xl mt-10">
+      <div className="flex flex-col sm:flex-row gap-10 w-full max-w-screen-xl mt-10">
         {/* Player List on Left */}
-        <div className="w-1/4 bg-[#e3e3e337] p-6 rounded-lg shadow-2xl">
-          <h2 className="text-3xl font-bold text-center text-black mb-6">
-            Players
-          </h2>
-          <ul id="playerList" className="text-black">
-            {players.map((player, index) => (
-              <li key={player.id || player.name} className="text-lg mb-4">
-                <div className="flex items-center justify-between gap-6 bg-white p-4 rounded-3xl shadow-lg transform transition-all duration-300 hover:scale-105">
-                  <div className="flex items-center gap-6">
-                    <img
-                      src={images[player.img]}
-                      alt="Avatar"
-                      className="w-16 h-16 object-cover rounded-full"
-                    />
-                    <div className="flex flex-col">
-                      <span className="text-xl font-semibold text-black">
-                        {player.name}
-                        {index === 0 && (
-                          <span className="ml-2 text-blue-500 font-medium">
-                            (Host)
-                          </span>
-                        )}
-                      </span>
-                      <span className="text-gray-700 text-lg">
-                        Points: {player.points}
-                      </span>
-                    </div>
-                  </div>
-
-                  {host && player.id !== socket.id && (
-                    <button
-                      onClick={() => handleKick(player.id)}
-                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow-md transition duration-200"
-                    >
-                      Kick
-                    </button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <PlayerList
+          players={players}
+          host={host}
+          socket={socket}
+          images={images}
+          handleKick={handleKick}
+        />
         {gameState === "newGame" ? (
           <>
             {/* Game Settings and Chat on Right */}
-            <div className="flex flex-col gap-5 justify-end">
-              <div className="bg-[#e3e3e337] p-6 rounded-lg shadow-2xl w-full max-w-lg mt-10 flex flex-col items-center gap-5">
-                <h2 className="text-3xl font-bold text-center text-black mb-6">
-                  Choose Your Fun!
-                </h2>
-
-                {/* <div className="grid grid-cols-3 gap-6">
-                  <span
-                    onClick={() => (host ? handleModeChange("Survival") : null)}
-                    className={`bg-gradient-to-r from-yellow-400 to-orange-400 text-xl font-semibold px-10 py-6 rounded-lg shadow-lg hover:from-yellow-500 hover:to-orange-500 transform hover:scale-105 transition-all text-center ${
-                      mode === "Survival"
-                        ? "border-[3px] border-black rounded-[10px] text-black"
-                        : "text-white"
-                    }${
-                      host
-                        ? !loading
-                          ? null
-                          : "cursor-not-allowed"
-                        : "cursor-not-allowed"
-                    }`}
-                  >
-                    🛡️ Survival Mode
-                  </span>
-
-                  <span
-                    onClick={() =>
-                      host ? handleModeChange("Time Attack") : null
-                    }
-                    className={`bg-gradient-to-r from-pink-400 to-purple-500 text-xl font-semibold px-10 py-6 rounded-lg shadow-lg hover:from-pink-500 hover:to-purple-600 transform hover:scale-105 transition-all text-center ${
-                      mode === "Time Attack"
-                        ? "border-[3px] border-black rounded-[10px] text-black"
-                        : "text-white"
-                    } ${
-                      host
-                        ? !loading
-                          ? null
-                          : "cursor-not-allowed"
-                        : "cursor-not-allowed"
-                    }`}
-                  >
-                    ⏱️ Time Attack
-                  </span>
-
-                  <span
-                    onClick={() => (host ? handleModeChange("Classic") : null)}
-                    className={`bg-gradient-to-r from-blue-400 to-teal-500 text-xl font-semibold px-10 py-6 rounded-lg shadow-lg hover:from-blue-500 hover:to-teal-600 transform hover:scale-105 transition-all text-center ${
-                      mode === "Classic"
-                        ? "border-[3px] border-black rounded-[10px] text-black"
-                        : "text-white"
-                    } ${
-                      host
-                        ? !loading
-                          ? null
-                          : "cursor-not-allowed"
-                        : "cursor-not-allowed"
-                    }`}
-                  >
-                    🕹️ Classic Mode
-                  </span>
-                </div> */}
-
-                <div className="flex flex-col gap-6 w-full">
-                  {/* Category Dropdown */}
-                  <div className="flex flex-col">
-                    <label
-                      htmlFor="category"
-                      className="text-lg font-semibold text-black mb-2"
-                    >
-                      Choose Category
-                    </label>
-                    <select
-                      id="category"
-                      value={category}
-                      disabled={!host}
-                      onChange={handleCategoryChange}
-                      className={` text-black font-semibold px-6 py-3 rounded-lg shadow-lg transform ${
-                        host ? "hover:scale-105" : "cursor-not-allowed"
-                      } transition-all focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                    >
-                      <option value="All">All</option>
-                      <option value="Sports">Sports</option>
-                      <option value="Cinema">Cinema</option>
-                      <option value="Maths">Maths</option>
-                      <option value="Geography">Geography</option>
-                      <option value="Apptitude">Apptitude</option>
-                      <option value="Anime">Anime</option>
-                    </select>
-                  </div>
-
-                  {/* Number of Questions Dropdown */}
-                  <div className="flex flex-col">
-                    <label
-                      htmlFor="questions"
-                      className="text-lg font-semibold text-black mb-2"
-                    >
-                      Number of Questions
-                    </label>
-                    <select
-                      id="questions"
-                      value={noOfQuestion}
-                      disabled={!host}
-                      onChange={handleNoOfQuestionsChange}
-                      className={` text-black font-semibold px-6 py-3 rounded-lg shadow-lg transform ${
-                        host ? "hover:scale-105" : "cursor-not-allowed"
-                      } transition-all focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                    >
-                      <option value="10">10</option>
-                      <option value="15">15</option>
-                      <option value="20">20</option>
-                      <option value="25">25</option>
-                      <option value="30">30</option>
-                    </select>
-                  </div>
-
-                  {/* Timer Dropdown */}
-                  <div className="flex flex-col">
-                    <label
-                      htmlFor="timer"
-                      className="text-lg font-semibold text-black mb-2"
-                    >
-                      Time per Question (Seconds)
-                    </label>
-                    <select
-                      id="timer"
-                      value={time}
-                      disabled={!host}
-                      onChange={handleTimerChange}
-                      className={` text-black font-semibold px-6 py-3 rounded-lg shadow-lg transform ${
-                        host ? "hover:scale-105" : "cursor-not-allowed"
-                      } transition-all focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                    >
-                      <option value="5">5</option>
-                      <option value="10">10</option>
-                      <option value="15">15</option>
-                      <option value="20">20</option>
-                    </select>
-                  </div>
-
-                  {/* Difficulty Slider */}
-                  <div className="flex flex-col">
-                    <label
-                      htmlFor="difficulty"
-                      className="text-lg font-semibold text-black mb-2"
-                    >
-                      Difficulty Level
-                    </label>
-                    <input
-                      id="difficulty"
-                      type="range"
-                      min="1"
-                      max="3"
-                      step="1"
-                      disabled={!host}
-                      value={
-                        difficulty === "Easy"
-                          ? 1
-                          : difficulty === "Medium"
-                          ? 2
-                          : 3
-                      }
-                      onChange={handleDifficultyChange}
-                      className={`slider rounded-lg appearance-none ${
-                        host ? null : "cursor-not-allowed"
-                      }`}
-                    />
-                    <div className="flex justify-between mt-2">
-                      <span>Easy</span>
-                      <span>Medium</span>
-                      <span>Hard</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-5 justify-center text-center text-white">
-                    <div className="flex items-center justify-center text-center text-white">
-                      {/* Copy Button Container */}
-                      <button
-                        onClick={copyCodeToClipboard}
-                        className="bg-blue-500 text-black py-3 px-8 rounded-xl shadow-lg flex items-center gap-4 transform hover:scale-105 transition-all"
-                      >
-                        {/* Button Text */}
-                        <span className="text-xl font-semibold">
-                          {copied ? "Copied" : "Click to copy code"}
-                        </span>
-                        {/* Clipboard Icon */}
-                        <FiClipboard size={30} />
-                      </button>
-                    </div>
-
-                    {/* Start Game Button */}
-                    <button
-                      onClick={getQuiz}
-                      className={`${
-                        host
-                          ? "bg-green-500 hover:bg-green-600 "
-                          : "bg-green-800 cursor-not-allowed"
-                      } text-white font-bold px-10 py-4 rounded-lg shadow-lg transform hover:scale-105 transition-all`}
-                    >
-                      {loading ? "Starting..." : "Start Game"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <GameSetting
+              category={category}
+              noOfQuestion={noOfQuestion}
+              time={time}
+              difficulty={difficulty}
+              copied={copied}
+              copyCodeToClipboard={copyCodeToClipboard}
+              host={host}
+              handleCategoryChange={handleCategoryChange}
+              handleDifficultyChange={handleDifficultyChange}
+              handleNoOfQuestionsChange={handleNoOfQuestionsChange}
+              handleTimerChange={handleTimerChange}
+              loading={loading}
+              getQuiz={getQuiz}
+            />
           </>
         ) : gameState === "started" ? (
           <>
-            <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg text-center flex flex-col space-y-6">
-              <div className="flex justify-between items-center bg-gray-100 p-4 rounded-lg shadow-inner">
-                <div
-                  className={`text-3xl font-extrabold ${
-                    timer <= time * 0.75 ? "text-red-500" : "text-green-500"
-                  }`}
-                >
-                  {timer}
-                </div>
-              </div>
-
-              <h4 className="text-2xl font-extrabold text-gray-800 mt-4">
-                Question {questionNumber + 1} of {noOfQuestion}
-              </h4>
-
-              <div className="bg-blue-50 p-6 rounded-lg shadow-md border border-blue-300">
-                <h3 className="text-xl font-semibold text-blue-800">
-                  Question
-                </h3>
-                <p className="mt-2 text-lg font-medium text-gray-900">
-                  {currentQuestion.question || "Loading..."}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                {currentQuestion.options.map((option, index) => {
-                  const optionNumber = index + 1;
-                  const isCorrect =
-                    optionNumber === currentQuestion.correctOption;
-                  const isSelected = optionNumber === selectedOption;
-
-                  let bgColor = "bg-gray-200 hover:bg-gray-300";
-                  if (isAnswered) {
-                    if (isSelected) {
-                      bgColor = isCorrect ? "bg-green-500" : "bg-red-500";
-                    } else if (isCorrect) {
-                      bgColor = "bg-green-500"; // Show correct option
-                    }
-                  }
-
-                  return (
-                    <button
-                      key={index}
-                      onClick={() => handleAnswer(optionNumber)}
-                      className={`py-3 px-4 rounded-lg shadow-md ${bgColor}`}
-                      disabled={isAnswered} // Disable after selecting an option
-                    >
-                      {option}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            <QuizWindow
+              timer={timer}
+              time={time}
+              questionNumber={questionNumber}
+              noOfQuestion={noOfQuestion}
+              currentQuestion={currentQuestion}
+              selectedOption={selectedOption}
+              isAnswered={isAnswered}
+              handleAnswer={handleAnswer}
+              category={category}
+            />
           </>
         ) : (
           <Waiting
@@ -618,55 +331,16 @@ function Lobby() {
         )}
 
         {/* Chat Box */}
-        <div className="bg-[#e3e3e337] p-6 rounded-lg shadow-2xl w-1/4">
-          <h2 className="text-3xl font-bold text-center text-black mb-6">
-            Chat
-          </h2>
-          <div
-            id="chatBox"
-            className="h-64 overflow-y-auto bg-white p-4 rounded-lg mb-4"
-          >
-            {messages.map((msg, index) => (
-              <p
-                key={index}
-                className={`text-black break-words ${
-                  msg.code === "correct"
-                    ? " text-green-500"
-                    : msg.code === "joined"
-                    ? "text-pink-500"
-                    : msg.code === "left" || msg.code === "kick"
-                    ? "text-red-500"
-                    : msg.code === "newHost"
-                    ? "text-orange-500"
-                    : null
-                }`}
-              >
-                <strong>
-                  {msg.sender === "Kuizu" ? null : msg.sender + ":"}
-                </strong>{" "}
-                {msg.message}
-              </p>
-            ))}
-          </div>
-          <input
-            type="text"
-            id="messageInput"
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault();
-                sendMessage();
-              }
-            }}
-            className="w-full p-3 bg-white rounded-lg"
-            placeholder="Type your message..."
-          />
-          <button
-            onClick={sendMessage}
-            className="mt-4 w-full bg-blue-500 text-white py-3 rounded-lg"
-          >
-            Send
-          </button>
-        </div>
+        <ChatBox messages={messages} sendMessage={sendMessage} />
+        <MobileChatNPlayer
+          players={players}
+          images={images}
+          host={host}
+          socket={socket}
+          handleKick={handleKick}
+          messages={messages}
+          sendMessage={sendMessage}
+        />
       </div>
 
       <ToastContainer
