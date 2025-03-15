@@ -213,7 +213,8 @@ function Lobby() {
 
     setSelectedOption(selectedOption); // Store selected option
     setIsAnswered(true); // Disable further answering
-    const timeLeft = time - timer;
+    let timeLeft = time - timer;
+    timeLeft = time - timeLeft;;
 
     const maxPoints = 100; // Maximum possible points
     const minPoints = 30; // Minimum points for correct answer
