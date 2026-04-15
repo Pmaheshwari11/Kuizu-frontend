@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FiArrowLeft } from "react-icons/fi";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { getQuiz } from "../../server"; // Fetch the quiz data (add this function in your backend to return quiz data)
+import { getQuiz } from "../../server";
 import he from "he";
 
 function SP_TIME() {
@@ -11,30 +11,25 @@ function SP_TIME() {
   const [questions, setQuestions] = useState([]);
   const [question, setQuestion] = useState("Loading question...");
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(60); // Start with 60 seconds
+  const [timeLeft, setTimeLeft] = useState(60);
   const [isGameActive, setIsGameActive] = useState(false);
   const [questionNumber, setQuestionNumber] = useState(0);
   const [restarting, setRestarting] = useState(false);
   const [shuffledAnswers, setShuffledAnswers] = useState([]);
-  const [loading, setLoading] = useState(false); // State for loading popup
+  const [loading, setLoading] = useState(false);
 
-  // Load personal best from localStorage
   useEffect(() => {
     const storedBest = localStorage.getItem("personalBestTimeAttack");
     if (storedBest) setPersonalBest(parseInt(storedBest));
   }, []);
 
-  // Timer logic
   useEffect(() => {
     if (isGameActive && timeLeft > 0) {
       const timer = setInterval(() => {
         setTimeLeft((prevTime) => prevTime - 1);
       }, 1000);
-
       return () => clearInterval(timer);
     }
-
-    // If time runs out, stop the game
     if (timeLeft <= 0 && isGameActive) {
       setIsGameActive(false);
       toast.error("Time’s up! Game Over.");
@@ -43,7 +38,7 @@ function SP_TIME() {
 
   const startGame = async () => {
     setRestarting(true);
-    setLoading(true); // Show the loading popup when game starts or restarts
+    setLoading(true);
     try {
       const quizData = await getQuiz();
       if (quizData?.results && quizData.results.length > 0) {
@@ -63,13 +58,12 @@ function SP_TIME() {
       console.error("Error fetching quiz data:", error);
       toast.error("Error fetching quiz data. Please try again later.");
     } finally {
-      setLoading(false); // Hide the loading popup after the game starts
+      setLoading(false);
     }
   };
 
   const fetchNewQuestions = async () => {
     if (questions.length <= questionNumber + 5) {
-      // Fetch new questions if 5 or fewer remain
       try {
         const quizData = await getQuiz();
         if (quizData?.results && quizData.results.length > 0) {
@@ -77,13 +71,8 @@ function SP_TIME() {
             ...prevQuestions,
             ...quizData.results,
           ]);
-        } else {
-          toast.error("No more questions available.");
         }
-      } catch (error) {
-        console.error("Error fetching new questions:", error);
-        toast.error("Error fetching new questions. Please try again later.");
-      }
+      } catch (error) {}
     }
   };
 
@@ -98,7 +87,6 @@ function SP_TIME() {
     }
   };
 
-  // Fetch next question
   const fetchNewQuestion = (index) => {
     if (index < questions.length) {
       setQuestion(he.decode(questions[index]?.question));
@@ -109,18 +97,17 @@ function SP_TIME() {
   const updateScore = () => {
     if (!isGameActive) return;
     setScore((prevScore) => prevScore + 10);
-    setTimeLeft((prevTime) => Math.min(prevTime + 5, 60)); // Add 5 seconds for correct answer
+    setTimeLeft((prevTime) => Math.min(prevTime + 5, 60));
+    toast.dismiss();
     toast.success("+5 Seconds");
-
     if (score + 10 > personalBest) {
       setPersonalBest(score + 10);
       localStorage.setItem("personalBestTimeAttack", score + 10);
     }
-
     const nextQuestionNumber = questionNumber + 1;
     setQuestionNumber(nextQuestionNumber);
     fetchNewQuestion(nextQuestionNumber);
-    fetchNewQuestions(); // Fetch new questions if needed
+    fetchNewQuestions();
   };
 
   const wrongAnswer = () => {
@@ -139,108 +126,115 @@ function SP_TIME() {
       updateScore();
     } else {
       wrongAnswer();
+      toast.dismiss();
       toast.error("-5 Seconds");
     }
-    const nextQuestionNumber = questionNumber + 1;
-    setQuestionNumber(nextQuestionNumber);
-    fetchNewQuestion(nextQuestionNumber);
   };
 
   return (
-    <div
-      className="flex flex-col items-center justify-center min-h-screen p-6"
-      style={{ backgroundImage: "url(/Assets/background.png)" }}
-    >
+    <div className="flex flex-col items-center justify-center min-h-screen bg-[#FFEFD5] p-6 relative">
+      <div
+        className="absolute inset-0 opacity-[0.05] pointer-events-none"
+        style={{
+          backgroundImage: "radial-gradient(#000 2px, transparent 2px)",
+          backgroundSize: "30px 30px",
+        }}
+      ></div>
+
       <a
         href="/singlePlayer"
-        className="absolute top-4 left-4 bg-[#d2d1d142] p-2 rounded-xl"
+        className="absolute top-6 left-6 z-50 bg-white border-4 border-black p-2 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all"
       >
-        <FiArrowLeft size={30} />
+        <FiArrowLeft size={30} color="black" strokeWidth={3} />
       </a>
 
-      {/* Loading Popup */}
       {loading && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full text-center">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-[100]">
+          <div className="bg-white border-4 border-black p-8 rounded-3xl shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] text-center animate-pulse">
             <img
-              src="/Assets/loading.png" // Replace with your loading image path
+              src="/Assets/loading.png"
               alt="Loading..."
-              className="animate-spin h-32 w-32 mx-auto"
+              className="animate-spin h-24 w-24 mx-auto mb-4"
             />
-            <h3 className="mt-4 text-xl font-semibold text-gray-900">
-              Loading...
+            <h3 className="text-2xl font-black uppercase tracking-tight">
+              Hurry... Fetching Quiz!
             </h3>
           </div>
         </div>
       )}
 
-      {/* Game Rules Popup */}
       {showRules ? (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full text-center">
-            <h2 className="text-3xl font-extrabold mb-6 text-gray-900">
-              Time Attack Rules
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50 p-4">
+          <div className="bg-white border-4 border-black p-8 rounded-3xl shadow-[16px_16px_0px_0px_rgba(0,0,0,1)] max-w-md w-full text-center">
+            <h2 className="text-4xl font-black mb-6 text-black uppercase italic tracking-tighter">
+              Time Attack
             </h2>
-            <ul className="text-left list-disc pl-6 space-y-2 text-gray-700">
-              <li>Game starts with 60 seconds.</li>
-              <li>Each correct answer adds +5 sec.</li>
-              <li>Each wrong answer subtracts -5 sec.</li>
-              <li>Game ends when time reaches 0.</li>
+            <ul className="text-left space-y-4 mb-8">
+              <li className="flex items-center gap-3 font-bold text-lg">
+                <span className="text-3xl">⏱️</span> 60 Seconds to start.
+              </li>
+              <li className="flex items-center gap-3 font-bold text-lg">
+                <span className="text-3xl">✅</span> +5s for Correct Answer.
+              </li>
+              <li className="flex items-center gap-3 font-bold text-lg">
+                <span className="text-3xl">❌</span> -5s for Wrong Answer.
+              </li>
             </ul>
             <button
               onClick={startGame}
-              className="mt-6 bg-green-500 text-white py-3 px-8 rounded-lg shadow-md hover:bg-green-600 hover:scale-105 transition-all duration-300"
+              className="w-full bg-[#FF6B6B] border-4 border-black text-white text-2xl font-black py-4 rounded-2xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[3px] active:translate-y-[3px] transition-all uppercase"
             >
-              Start Game
+              Begin Race
             </button>
           </div>
         </div>
       ) : (
-        <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg text-center flex flex-col space-y-6">
+        <div className="bg-white border-4 border-black p-6 rounded-3xl shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-xl relative z-10">
           {isGameActive ? (
             <>
-              {/* Score & Time Section */}
-              <div className="flex justify-between items-center bg-gray-100 p-4 rounded-lg shadow-inner">
-                <div className="flex flex-col items-center">
-                  <h2 className="text-lg font-bold text-blue-600">Score</h2>
-                  <span className="text-3xl font-extrabold text-gray-900">
-                    {score}
-                  </span>
+              {/* Stats & Timer Grid */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-[#4ECDC4] border-4 border-black p-3 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                  <p className="text-xs font-black uppercase opacity-70">
+                    Score
+                  </p>
+                  <p className="text-3xl font-black">{score}</p>
                 </div>
-                <div className="border-l-2 border-gray-300"></div>
-                <div className="flex flex-col items-center">
-                  <h3 className="text-lg font-bold text-green-600">
+                <div className="bg-[#FFD700] border-4 border-black p-3 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                  <p className="text-xs font-black uppercase opacity-70">
                     Personal Best
-                  </h3>
-                  <span className="text-3xl font-extrabold text-gray-900">
-                    {personalBest}
-                  </span>
+                  </p>
+                  <p className="text-3xl font-black">{personalBest}</p>
                 </div>
               </div>
-              {/* Timer Display */}
-              <h4
-                className={`text-3xl font-extrabold ${
-                  timeLeft < 10 ? "text-red-600" : "text-green-600"
-                } mt-4`}
+
+              {/* Timer */}
+              <div
+                className={`mb-8 border-4 border-black p-4 rounded-2xl text-center shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] ${timeLeft < 10 ? "bg-[#FF6B6B] text-white" : "bg-white text-black"}`}
               >
-                Time Left: {timeLeft}s
-              </h4>
-              {/* Question Section */}
-              <div className="bg-blue-50 p-6 rounded-lg shadow-md border border-blue-300">
-                <h3 className="text-xl font-semibold text-blue-800">
-                  Question
-                </h3>
-                <p className="mt-2 text-lg font-medium text-gray-900">
-                  {question}
+                <p className="text-sm font-black uppercase tracking-widest">
+                  Time Remaining
                 </p>
+                <p className="text-5xl font-black tabular-nums">{timeLeft}s</p>
               </div>
-              {/* Answer Buttons */}
-              <div className="grid grid-cols-2 gap-4">
+
+              {/* Question Box */}
+              <div className="mb-8 border-l-8 border-black pl-4">
+                <p className="text-sm font-black uppercase text-gray-400 mb-1">
+                  Question #{questionNumber + 1}
+                </p>
+                <h3 className="text-2xl font-bold leading-tight text-black">
+                  {question}
+                </h3>
+              </div>
+
+              {/* Answers Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {shuffledAnswers.map((answer, index) => (
                   <button
                     key={index}
                     onClick={() => handleAnswerClick(he.decode(answer))}
-                    className="bg-gray-200 py-3 px-4 rounded-lg shadow-md hover:bg-gray-300"
+                    className="bg-white border-4 border-black py-4 px-4 rounded-xl font-bold text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-[#6C5CE7] hover:text-white active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all text-left"
                   >
                     {he.decode(answer)}
                   </button>
@@ -248,29 +242,38 @@ function SP_TIME() {
               </div>
             </>
           ) : (
-            <div>
-              <h3 className="text-3xl font-semibold text-red-500">
-                Game Over!
+            <div className="text-center py-10">
+              <h3 className="text-5xl font-black text-[#FF6B6B] uppercase italic tracking-tighter mb-4">
+                Time Up!
               </h3>
-              <h4 className="text-xl font-bold text-gray-900 mt-4">
-                Your Final Score: {score}
-              </h4>
+              <div className="bg-black text-white p-6 rounded-2xl border-4 border-black mb-8 inline-block px-12 shadow-[8px_8px_0px_0px_rgba(78,205,196,1)]">
+                <p className="text-lg font-bold uppercase">Final Points</p>
+                <p className="text-6xl font-black">{score}</p>
+              </div>
               <button
                 onClick={startGame}
                 disabled={restarting}
-                className="mt-6 bg-green-500 text-white py-3 px-8 rounded-lg shadow-md hover:bg-green-600 hover:scale-105 transition-all duration-300"
+                className="block w-full bg-[#4ECDC4] border-4 border-black text-black py-4 rounded-2xl text-2xl font-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[3px] active:translate-y-[3px] transition-all uppercase"
               >
-                Restart Game
+                Restart Race
               </button>
             </div>
           )}
         </div>
       )}
+
       <ToastContainer
         position="top-center"
-        autoClose={500}
-        hideProgressBar
-        newestOnTop
+        autoClose={800}
+        hideProgressBar={true}
+        newestOnTop={true}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss={false}
+        draggable
+        pauseOnHover={false}
+        theme="colored"
+        limit={1}
       />
     </div>
   );

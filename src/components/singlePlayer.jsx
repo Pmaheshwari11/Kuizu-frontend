@@ -1,74 +1,91 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { FiArrowLeft } from "react-icons/fi";
+import Logo from "./logo"; // Using the updated Logo component we made
 
 function SinglePlayer() {
   const navigate = useNavigate();
 
   return (
-    <div
-      className="min-h-screen flex flex-col items-center bg-cover bg-center p-4"
-      style={{ backgroundImage: "url(/Assets/background.png)" }}
-    >
+    <div className="min-h-screen flex flex-col items-center bg-[#FFEFD5] p-4 relative overflow-hidden">
+      <div
+        className="absolute inset-0 opacity-[0.05] pointer-events-none"
+        style={{
+          backgroundImage: "radial-gradient(#000 2px, transparent 2px)",
+          backgroundSize: "30px 30px",
+        }}
+      ></div>
+
+      {/* Back Button */}
       <button
         onClick={() => navigate("/")}
-        className="fixed left-4 rounded-2xl bg-[#d2d1d142]"
+        className="fixed left-6 top-6 z-50 bg-white border-4 border-black p-2 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all"
       >
-        <FiArrowLeft size={30} />
+        <FiArrowLeft size={30} color="black" strokeWidth={3} />
       </button>
 
-      <h1 className="mt-10 mb-8 flex justify-center items-center w-full font-henny-penny">
-        <svg height="90" width="300">
-          <text
-            fontSize="80"
-            fontWeight="bold"
-            x="10"
-            y="80"
-            stroke="black"
-            strokeWidth="0.1"
-            fill="none"
-          >
-            <tspan fill="red">K</tspan>
-            <tspan fill="orange">u</tspan>
-            <tspan fill="yellow">i</tspan>
-            <tspan fill="green">z</tspan>
-            <tspan fill="blue">u</tspan>
-            <tspan fill="purple">?</tspan>
-          </text>
-        </svg>
-      </h1>
+      <div className="mt-8 scale-75 md:scale-90">
+        <Logo />
+      </div>
 
-      <div className="bg-[#e3e3e337] p-6 rounded-lg shadow-2xl w-full max-w-lg mt-10">
-        <h2 className="text-3xl font-bold text-center text-black mb-6">
+      <div className="bg-white border-4 border-black p-8 rounded-3xl shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-md mt-4 relative z-10">
+        <h2 className="text-4xl font-black text-center text-black mb-10 tracking-tight uppercase italic">
           Choose Your Fun!
         </h2>
 
-        <div className="grid grid-cols-1 gap-6">
+        <div className="grid grid-cols-1 gap-8">
           {/* Survival Mode */}
           <button
             onClick={() => navigate("/survival")}
-            className="bg-gradient-to-r from-yellow-400 to-orange-400 text-black text-xl font-semibold px-10 py-6 rounded-lg shadow-lg hover:from-yellow-500 hover:to-orange-500 transform hover:scale-105 transition-all text-center"
+            className="group relative bg-[#FFD700] border-4 border-black px-6 py-5 rounded-2xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all active:shadow-none active:translate-x-[3px] active:translate-y-[3px] text-center"
           >
-            🛡️ Survival Mode
+            <div className="flex items-center justify-between">
+              <span className="text-3xl">🛡️</span>
+              <span className="text-black text-xl font-black uppercase">
+                Survival Mode
+              </span>
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                →
+              </span>
+            </div>
           </button>
 
           {/* Time Attack */}
           <button
             onClick={() => navigate("/timeAttack")}
-            className="bg-gradient-to-r from-pink-400 to-purple-500 text-white text-xl font-semibold px-10 py-6 rounded-lg shadow-lg hover:from-pink-500 hover:to-purple-600 transform hover:scale-105 transition-all text-center"
+            className="group relative bg-[#FF6B6B] border-4 border-black px-6 py-5 rounded-2xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all active:shadow-none active:translate-x-[3px] active:translate-y-[3px] text-center"
           >
-            ⏱️ Time Attack
+            <div className="flex items-center justify-between text-white">
+              <span className="text-3xl">⏱️</span>
+              <span className="text-black text-xl font-black uppercase">
+                Time Attack
+              </span>
+              <span className="text-black opacity-0 group-hover:opacity-100 transition-opacity">
+                →
+              </span>
+            </div>
           </button>
 
           {/* Classic Mode */}
           <button
             onClick={() => navigate("/classic")}
-            className="bg-gradient-to-r from-blue-400 to-teal-500 text-white text-xl font-semibold px-10 py-6 rounded-lg shadow-lg hover:from-blue-500 hover:to-teal-600 transform hover:scale-105 transition-all text-center"
+            className="group relative bg-[#4ECDC4] border-4 border-black px-6 py-5 rounded-2xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all active:shadow-none active:translate-x-[3px] active:translate-y-[3px] text-center"
           >
-            🕹️ Classic Mode
+            <div className="flex items-center justify-between">
+              <span className="text-3xl">🕹️</span>
+              <span className="text-black text-xl font-black uppercase">
+                Classic Mode
+              </span>
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                →
+              </span>
+            </div>
           </button>
         </div>
       </div>
+
+      <div className="absolute top-20 right-10 w-12 h-12 border-4 border-black rounded-full bg-blue-400 rotate-12 hidden md:block"></div>
+      <div className="absolute bottom-20 left-10 w-10 h-10 border-4 border-black bg-pink-400 -rotate-12 hidden md:block"></div>
     </div>
   );
 }

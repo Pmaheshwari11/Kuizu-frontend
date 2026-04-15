@@ -40,13 +40,12 @@ function SP_SURVIVAL() {
       console.error("Error fetching quiz data:", error);
       toast.error("Error fetching quiz data. Please try again later.");
     } finally {
-      setLoading(false); // Hide the loading popup after the game starts
+      setLoading(false);
     }
   };
 
   const fetchNewQuestions = async () => {
     if (questions.length <= questionNumber + 5) {
-      // Load more if 5 or fewer questions remain
       try {
         const quizData = await getQuiz();
         if (quizData?.results && quizData.results.length > 0) {
@@ -54,12 +53,9 @@ function SP_SURVIVAL() {
             ...prevQuestions,
             ...quizData.results,
           ]);
-        } else {
-          toast.error("No more questions available.");
         }
       } catch (error) {
         console.error("Error fetching new questions:", error);
-        toast.error("Error fetching new questions. Please try again later.");
       }
     }
   };
@@ -77,12 +73,11 @@ function SP_SURVIVAL() {
   const updateScore = () => {
     if (!isGameActive) return;
     setScore((prevScore) => prevScore + 10);
+    toast.dismiss();
     toast.success("+10 Points");
     if (score + 10 > personalBest) {
       setPersonalBest(score + 10);
-      localStorage.setItem("personalBestTimeAttack", score + 10);
     }
-
     const nextQuestionNumber = questionNumber + 1;
     setQuestionNumber(nextQuestionNumber);
     fetchNewQuestion(nextQuestionNumber);
@@ -96,39 +91,46 @@ function SP_SURVIVAL() {
       updateScore();
     } else {
       setLives((prev) => prev - 1);
+      toast.dismiss();
       toast.error("Wrong Answer! Lives Left: " + (lives - 1));
       if (lives - 1 <= 0) {
         setIsGameActive(false);
+        toast.dismiss();
         toast.error("Game Over! No lives left.");
       }
     }
     const nextQuestionNumber = questionNumber + 1;
     setQuestionNumber(nextQuestionNumber);
     fetchNewQuestion(nextQuestionNumber);
-    fetchNewQuestions(); // Fetch new questions when nearing the end of the current set
+    fetchNewQuestions();
   };
 
   return (
-    <div
-      className="flex flex-col items-center justify-center min-h-screen p-6"
-      style={{ backgroundImage: "url(/Assets/background.png)" }}
-    >
+    <div className="flex flex-col items-center justify-center min-h-screen bg-[#FFEFD5] p-6 relative">
+      <div
+        className="absolute inset-0 opacity-[0.05] pointer-events-none"
+        style={{
+          backgroundImage: "radial-gradient(#000 2px, transparent 2px)",
+          backgroundSize: "30px 30px",
+        }}
+      ></div>
+
       <a
         href="/singlePlayer"
-        className="absolute top-4 left-4 bg-[#d2d1d142] p-2 rounded-xl"
+        className="absolute top-6 left-6 z-50 bg-white border-4 border-black p-2 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all"
       >
-        <FiArrowLeft size={30} />
+        <FiArrowLeft size={30} color="black" strokeWidth={3} />
       </a>
-      {/* Loading Popup */}
+
       {loading && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full text-center">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-[100]">
+          <div className="bg-white border-4 border-black p-8 rounded-3xl shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] text-center animate-bounce">
             <img
-              src="/Assets/loading.png" // Replace with your loading image path
+              src="/Assets/loading.png"
               alt="Loading..."
-              className="animate-spin h-32 w-32 mx-auto"
+              className="animate-spin h-24 w-24 mx-auto mb-4"
             />
-            <h3 className="mt-4 text-xl font-semibold text-gray-900">
+            <h3 className="text-2xl font-black uppercase tracking-tight">
               Loading...
             </h3>
           </div>
@@ -136,70 +138,71 @@ function SP_SURVIVAL() {
       )}
 
       {showRules ? (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full text-center">
-            <h2 className="text-3xl font-extrabold mb-6 text-gray-900">
-              Survival Mode Rules
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50 p-4">
+          <div className="bg-white border-4 border-black p-8 rounded-3xl shadow-[16px_16px_0px_0px_rgba(0,0,0,1)] max-w-md w-full text-center">
+            <h2 className="text-4xl font-black mb-6 text-black uppercase italic tracking-tighter">
+              Survival Rules
             </h2>
-            <ul className="text-left list-disc pl-6 space-y-2 text-gray-700">
-              <li>Start with 3 lives.</li>
-              <li>Each correct answer adds +10 points.</li>
-              <li>Game continues until you lose all lives.</li>
+            <ul className="text-left space-y-4 mb-8">
+              <li className="flex items-center gap-3 font-bold text-lg">
+                <span className="text-3xl">❤️</span> Start with 3 lives.
+              </li>
+              <li className="flex items-center gap-3 font-bold text-lg">
+                <span className="text-3xl">🎯</span> Each correct answer is +10.
+              </li>
+              <li className="flex items-center gap-3 font-bold text-lg">
+                <span className="text-3xl">⚡</span> Don't let your lives hit
+                zero!
+              </li>
             </ul>
             <button
               onClick={startGame}
-              className="mt-6 bg-green-500 text-white py-3 px-8 rounded-lg shadow-md hover:bg-green-600 hover:scale-105 transition-all duration-300"
+              className="w-full bg-[#4ECDC4] border-4 border-black text-black text-2xl font-black py-4 rounded-2xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[3px] active:translate-y-[3px] transition-all uppercase"
             >
               Start Game
             </button>
           </div>
         </div>
       ) : (
-        <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg text-center flex flex-col space-y-6">
+        <div className="bg-white border-4 border-black p-6 rounded-3xl shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-xl relative z-10">
           {isGameActive ? (
             <>
-              <div className="flex justify-between items-center bg-gray-100 p-4 rounded-lg shadow-inner">
-                <div className="flex flex-col items-center">
-                  <h2 className="text-lg font-bold text-blue-600">Score</h2>
-                  <span className="text-3xl font-extrabold text-gray-900">
-                    {score}
-                  </span>
+              {/* Stats Bar */}
+              <div className="grid grid-cols-3 gap-3 mb-8">
+                <div className="bg-[#FFD700] border-4 border-black p-2 rounded-xl text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                  <p className="text-xs font-black uppercase">Score</p>
+                  <p className="text-2xl font-black">{score}</p>
                 </div>
-                <div className="flex flex-col items-center">
-                  <h2 className="text-lg font-bold text-red-600">Lives</h2>
-                  <div className="flex justify-center space-x-2">
+                <div className="bg-white border-4 border-black p-2 rounded-xl text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                  <p className="text-xs font-black uppercase">Lives</p>
+                  <div className="flex justify-center gap-1 mt-1">
                     {[...Array(lives)].map((_, i) => (
-                      <img
-                        key={i}
-                        src="/Assets/heart.png"
-                        alt="life"
-                        className="w-8 h-8"
-                      />
+                      <span key={i} className="text-xl">
+                        ❤️
+                      </span>
                     ))}
                   </div>
                 </div>
-                <div className="flex flex-col items-center">
-                  <h2 className="text-lg font-bold text-green-600">Best</h2>
-                  <span className="text-3xl font-extrabold text-gray-900">
-                    {personalBest}
-                  </span>
+                <div className="bg-[#4ECDC4] border-4 border-black p-2 rounded-xl text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                  <p className="text-xs font-black uppercase">Best</p>
+                  <p className="text-2xl font-black">{personalBest}</p>
                 </div>
               </div>
 
-              <h4 className="text-2xl font-extrabold text-gray-800 mt-4">
-                Question {questionNumber + 1}
-              </h4>
-
-              <div className="bg-blue-50 p-6 rounded-lg shadow-md border border-blue-300">
-                <h3 className="text-xl font-semibold text-blue-800">
-                  Question
-                </h3>
-                <p className="mt-2 text-lg font-medium text-gray-900">
-                  {question || "Loading..."}
+              {/* Question Box */}
+              <div className="mb-8">
+                <p className="text-sm font-black uppercase text-gray-400 mb-1">
+                  Question #{questionNumber + 1}
                 </p>
+                <div className="bg-black text-white p-6 rounded-2xl border-4 border-black shadow-[6px_6px_0px_0px_rgba(78,205,196,1)]">
+                  <p className="text-xl md:text-2xl font-bold leading-tight">
+                    {question || "Loading..."}
+                  </p>
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              {/* Answers Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {questions.length > 0 &&
                   (questions[questionNumber]?.incorrect_answers?.length > 0
                     ? [
@@ -214,27 +217,31 @@ function SP_SURVIVAL() {
                       <button
                         key={index}
                         onClick={() => handleAnswerClick(he.decode(answer))}
-                        className="bg-gray-200 py-3 px-4 rounded-lg shadow-md hover:bg-gray-300"
+                        className="bg-white border-4 border-black py-4 px-4 rounded-xl font-bold text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-[#FFEFD5] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all text-left"
                       >
+                        <span className="inline-block mr-2 text-gray-400">
+                          {index + 1}.
+                        </span>
                         {he.decode(answer)}
                       </button>
                     ))}
               </div>
             </>
           ) : (
-            <div>
-              <h3 className="text-3xl font-semibold text-red-500">
+            <div className="text-center py-10">
+              <h3 className="text-5xl font-black text-[#FF6B6B] uppercase italic tracking-tighter mb-4">
                 Game Over!
               </h3>
-              <h4 className="text-xl font-bold text-gray-900 mt-4">
-                Your Final Score: {score}
-              </h4>
+              <div className="bg-black text-white p-6 rounded-2xl border-4 border-black mb-8 inline-block px-12 shadow-[8px_8px_0px_0px_rgba(255,107,107,1)]">
+                <p className="text-lg font-bold uppercase">Final Score</p>
+                <p className="text-6xl font-black">{score}</p>
+              </div>
               <button
                 onClick={startGame}
                 disabled={restarting}
-                className="mt-6 bg-green-500 text-white py-3 px-8 rounded-lg shadow-md hover:bg-green-600 hover:scale-105 transition-all duration-300"
+                className="block w-full bg-[#FFD700] border-4 border-black text-black py-4 rounded-2xl text-2xl font-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[3px] active:translate-y-[3px] transition-all uppercase"
               >
-                Restart Game
+                Try Again
               </button>
             </div>
           )}
@@ -243,9 +250,16 @@ function SP_SURVIVAL() {
 
       <ToastContainer
         position="top-center"
-        autoClose={500}
-        hideProgressBar
-        newestOnTop
+        autoClose={800}
+        hideProgressBar={true}
+        newestOnTop={true}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss={false}
+        draggable
+        pauseOnHover={false}
+        theme="colored"
+        limit={1}
       />
     </div>
   );

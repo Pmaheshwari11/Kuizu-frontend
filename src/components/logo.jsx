@@ -1,28 +1,58 @@
-import react from 'react';
+import React from "react";
 
-function Logo(){
-    return(
-    <h1 className="text-[100px] font-extrabold drop-shadow-xl mt-10 mb-8 flex gap-2 text-center w-full justify-center font-henny-penny">
-    <svg height="120" width="400">
-      <text
-        fontSize="100"
-        fontWeight="bold"
-        x="10"
-        y="100"
-        stroke="black"
-        strokeWidth="0.000001"
-        fill="none"
+function Logo() {
+  return (
+    <div className="flex justify-center items-center py-8 select-none">
+      <h1
+        className="text-7xl md:text-9xl font-black italic tracking-tighter"
+        style={{
+          color: "#fff",
+          WebkitTextStroke: "3px black",
+          textShadow: `
+            4px 4px 0px #000,
+            8px 8px 0px #FF6B6B
+          `,
+        }}
       >
-        <tspan fill="red">K</tspan>
-        <tspan fill="orange">u</tspan>
-        <tspan fill="yellow">i</tspan>
-        <tspan fill="green">z</tspan>
-        <tspan fill="blue">u</tspan>
-        <tspan fill="purple">?</tspan>
-      </text>
-    </svg>
-  </h1>
-)};
+        <span
+          className="text-[#FF6B6B]"
+          style={{ WebkitTextStroke: "3px black" }}
+        >
+          K
+        </span>
+        <span
+          className="text-[#FFD700]"
+          style={{ WebkitTextStroke: "3px black" }}
+        >
+          u
+        </span>
+        <span
+          className="text-[#4ECDC4]"
+          style={{ WebkitTextStroke: "3px black" }}
+        >
+          i
+        </span>
+        <span
+          className="text-[#FF9F43]"
+          style={{ WebkitTextStroke: "3px black" }}
+        >
+          z
+        </span>
+        <span
+          className="text-[#6C5CE7]"
+          style={{ WebkitTextStroke: "3px black" }}
+        >
+          u
+        </span>
+        <span
+          className="text-[#FF6B6B]"
+          style={{ WebkitTextStroke: "3px black" }}
+        >
+          ?
+        </span>
+      </h1>
+    </div>
+  );
+}
 
 export default Logo;
-

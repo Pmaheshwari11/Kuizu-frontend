@@ -12,43 +12,80 @@ function QuizWindow({
   category,
 }) {
   return (
-    <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg text-center flex flex-col space-y-6">
-      <div className="flex justify-around items-center bg-gray-100 p-4 rounded-lg shadow-inner">
-        <h3 className="text-2xl font-semibold">{category}</h3>
-        <div
-          className={`text-3xl font-extrabold flex items-center justify-center w-16 h-16 bg-cover bg-center bg-no-repeat ${
-            timer <= time * 0.75 ? "text-red-500" : "text-green-500"
-          }`}
-          style={{ backgroundImage: "url(/Assets/stopwatch.png)" }}
-          aria-label={`Time left: ${timer} seconds`}
-        >
-          <span className="px-2 rounded">{timer}</span>
+    <div className="bg-white border-4 border-black p-6 md:p-8 rounded-3xl shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] w-full max-w-xl text-center flex flex-col space-y-6 relative z-10">
+      {/* Category & Timer */}
+      <div className="flex justify-between items-center bg-[#F8F9FA] border-4 border-black p-4 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+        <div className="text-left">
+          <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest">
+            Category
+          </p>
+          <h3 className="text-xl font-black uppercase italic tracking-tighter text-black">
+            {category}
+          </h3>
+        </div>
+
+        {/* Stopwatch Container */}
+        <div className="flex flex-col items-center">
+          <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest mb-1">
+            Time
+          </p>
+          <div
+            className={`text-3xl font-black flex items-center justify-center w-16 h-16 rounded-xl border-4 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-colors duration-300 ${
+              timer <= time * 0.25
+                ? "bg-[#FF6B6B] text-white"
+                : "bg-[#FFD700] text-black"
+            }`}
+            aria-label={`Time left: ${timer} seconds`}
+          >
+            <span className="tabular-nums">{timer}</span>
+          </div>
         </div>
       </div>
 
-      <h4 className="text-2xl font-extrabold text-gray-800 mt-4">
-        Question {questionNumber + 1} of {noOfQuestion}
-      </h4>
+      {/* Question Progress */}
+      <div className="flex items-center gap-4">
+        <div className="flex-1 h-3 bg-gray-200 border-2 border-black rounded-full overflow-hidden">
+          <div
+            className="h-full bg-[#6C5CE7] transition-all duration-500"
+            style={{ width: `${((questionNumber + 1) / noOfQuestion) * 100}%` }}
+          ></div>
+        </div>
+        <span className="text-sm font-black uppercase whitespace-nowrap">
+          {questionNumber + 1} / {noOfQuestion}
+        </span>
+      </div>
 
-      <div className="bg-blue-50 p-6 rounded-lg shadow-md border border-blue-300">
-        <h3 className="text-xl font-semibold text-blue-800">Question</h3>
-        <p className="mt-2 text-lg font-medium text-gray-900">
+      {/* Question Card */}
+      <div className="bg-black text-white p-6 rounded-2xl border-4 border-black shadow-[6px_6px_0px_0px_rgba(78,205,196,1)]">
+        <h3 className="text-xs font-black uppercase text-[#4ECDC4] mb-2 tracking-widest text-left">
+          The Question
+        </h3>
+        <p className="text-xl md:text-2xl font-bold leading-tight text-left">
           {currentQuestion.question || "Loading..."}
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      {/* Options Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
         {currentQuestion.options.map((option, index) => {
           const optionNumber = index + 1;
           const isCorrect = optionNumber === currentQuestion.correctOption;
           const isSelected = optionNumber === selectedOption;
 
-          let bgColor = "bg-gray-200 hover:bg-gray-300";
+          let styling =
+            "bg-white text-black hover:bg-[#FFEFD5] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]";
+
           if (isAnswered) {
             if (isSelected) {
-              bgColor = isCorrect ? "bg-green-500" : "bg-red-500";
+              styling = isCorrect
+                ? "bg-[#4ECDC4] text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]" // Correct Selection
+                : "bg-[#FF6B6B] text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"; // Wrong Selection
             } else if (isCorrect) {
-              bgColor = "bg-green-500"; // Show correct option
+              styling =
+                "bg-[#4ECDC4] text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] animate-pulse"; // Show where the correct answer was
+            } else {
+              styling =
+                "bg-gray-100 text-gray-400 border-gray-300 opacity-50 shadow-none"; // Muted others
             }
           }
 
@@ -56,10 +93,11 @@ function QuizWindow({
             <button
               key={index}
               onClick={() => handleAnswer(optionNumber)}
-              className={`py-3 px-4 rounded-lg shadow-md ${bgColor}`}
-              disabled={isAnswered} // Disable after selecting an option
+              className={`py-4 px-4 rounded-xl border-4 border-black font-black text-lg text-left flex items-start gap-3 transition-all active:shadow-none active:translate-x-[2px] active:translate-y-[2px] disabled:pointer-events-none ${styling}`}
+              disabled={isAnswered}
             >
-              {option}
+              <span className="opacity-30">{index + 1}.</span>
+              <span className="leading-tight">{option}</span>
             </button>
           );
         })}
@@ -67,4 +105,5 @@ function QuizWindow({
     </div>
   );
 }
+
 export default QuizWindow;

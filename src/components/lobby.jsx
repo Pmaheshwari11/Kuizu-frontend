@@ -17,8 +17,8 @@ import images from "./images";
 function Lobby() {
   const { partyCode } = useParams();
   const roomCode = atob(partyCode);
-  const [players, setPlayers] = useState([]); // State to store player list
-  const [messages, setMessages] = useState([]); // State to store chat messages
+  const [players, setPlayers] = useState([]);
+  const [messages, setMessages] = useState([]);
   const { socket, connected } = useWebSocket();
   const [copied, setCopied] = useState(false);
   const [questionsArray, setQuestionsArray] = useState([]);
@@ -35,17 +35,15 @@ function Lobby() {
   const [selectedOption, setSelectedOption] = useState(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const navigate = useNavigate();
-  const intervalRef = useRef(null); // Track interval
+  const intervalRef = useRef(null);
 
   useEffect(() => {
     if (connected) {
-      // Listen to player updates and update the player list
       socket.on("partyUpdated", (party) => {
-        setPlayers(party.players); // Update player list state
+        setPlayers(party.players);
         setHost(party.host === socket.id);
       });
 
-      // Listen to new messages and update the chat messages
       socket.on("receiveMessage", (data) => {
         setMessages((prevMessages) => [
           ...prevMessages,
@@ -54,11 +52,11 @@ function Lobby() {
       });
 
       socket.on("pointsUpdated", (players) => {
-        setPlayers(players); // Update player list state
+        setPlayers(players);
       });
 
       socket.on("questionsUpdated", (questionsList) => {
-        setQuestionsArray(questionsList); // Set the fetched questions
+        setQuestionsArray(questionsList);
         setGameState("started");
       });
 
@@ -79,14 +77,11 @@ function Lobby() {
         setDifficulty(difficulty);
       });
 
-      socket.on("syncTimer", (newTime) => {
-        setTimer(newTime);
-      });
-
       socket.on("nextQuestion", (newQuestionIndex) => {
         setQuestionNumber(newQuestionIndex);
-        setTimer(time); // Reset timer
+        setTimer(time);
       });
+
       socket.on("newGame", () => {
         setQuestionsArray([]);
         setQuestionNumber(0);
@@ -111,14 +106,14 @@ function Lobby() {
         socket.off("kicked");
       }
     };
-  }, [connected, socket, roomCode]);
+  }, [connected, socket, roomCode, time, navigate]);
 
   const copyCodeToClipboard = () => {
     if (roomCode) {
       navigator.clipboard.writeText(roomCode);
       setCopied(true);
       toast.success("Code copied to clipboard!");
-      setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -126,18 +121,13 @@ function Lobby() {
     const chatBox = document.getElementById("chatBox");
     if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
     if (messages.length >= 50) {
-      setMessages((prevMessages) => prevMessages.slice(1)); // Remove the first message
+      setMessages((prevMessages) => prevMessages.slice(1));
     }
   }, [messages]);
 
   function sendMessage(message) {
     const trimmedMessage = message.trim();
-
-    if (!roomCode || !trimmedMessage) {
-      alert("You must be in a party to send messages.");
-      return;
-    }
-
+    if (!roomCode || !trimmedMessage) return;
     socket.emit("sendMessage", roomCode, username, trimmedMessage);
   }
 
@@ -155,16 +145,14 @@ function Lobby() {
     const sliderValue = Number(e.target.value);
     const newDifficulty =
       sliderValue === 1 ? "Easy" : sliderValue === 2 ? "Medium" : "Hard";
-
     setDifficulty(newDifficulty);
-    socket.emit("updateDifficulty", roomCode, Number(e.target.value));
+    socket.emit("updateDifficulty", roomCode, sliderValue);
   };
 
   const handleTimerChange = (e) => {
     const newTime = Number(e.target.value);
     setTime(newTime);
     setTimer(newTime);
-
     socket.emit("updateTimer", roomCode, newTime);
   };
 
@@ -177,11 +165,7 @@ function Lobby() {
       toast.error("Only host can start the game");
       return;
     }
-    const data = {
-      noOfQuestion: noOfQuestion,
-      difficulty: difficulty,
-      topic: category,
-    };
+    const data = { noOfQuestion, difficulty, topic: category };
     setLoading(true);
     try {
       const response = await getGeminiQuiz(data);
@@ -198,34 +182,33 @@ function Lobby() {
         }));
         socket.emit("setQuestions", roomCode, questionsList);
       } else {
-        toast.error("Failed to load questions. Try again!");
+        toast.error("Failed to load questions.");
       }
     } catch (error) {
-      console.error("Error fetching quiz data:", error);
-      toast.error("Error fetching quiz data. Please try again later.");
+      console.error(error);
+      toast.error("Error fetching quiz.");
     } finally {
-      setLoading(false); // Hide the loading popup after the game starts
+      setLoading(false);
     }
   }
 
   const handleAnswer = (selectedOption) => {
-    if (gameState !== "started") return; // Prevent multiple answers
+    if (gameState !== "started" || isAnswered) return;
 
-    setSelectedOption(selectedOption); // Store selected option
-    setIsAnswered(true); // Disable further answering
-    let timeLeft = time - timer;
-    timeLeft = time - timeLeft;;
+    setSelectedOption(selectedOption);
+    setIsAnswered(true);
 
-    const maxPoints = 100; // Maximum possible points
-    const minPoints = 30; // Minimum points for correct answer
-    const timeFactor = timeLeft / time; // Fraction of time left (0 to 1)
+    const timeLeft = timer;
+    const maxPoints = 100;
+    const minPoints = 30;
+    const timeFactor = timeLeft / time;
     const points = Math.round(minPoints + (maxPoints - minPoints) * timeFactor);
+
     if (questionsArray[questionNumber].correctOption === selectedOption) {
-      toast.success("Correct Answer");
+      toast.success("Correct!");
       socket.emit("adminMessage", roomCode, username);
       socket.emit("updatePoints", roomCode, username, points);
     }
-
     socket.emit("playerAnswered", roomCode, username);
   };
 
@@ -235,7 +218,7 @@ function Lobby() {
   };
 
   useEffect(() => {
-    if (gameState !== "started") return; // Don't start the timer if the game isn't active
+    if (gameState !== "started") return;
 
     intervalRef.current = setInterval(() => {
       setTimer((prev) => {
@@ -245,7 +228,7 @@ function Lobby() {
             setQuestionNumber((prevQ) => prevQ + 1);
             setSelectedOption(null);
             setIsAnswered(false);
-            return time; // Reset timer
+            return time;
           } else {
             setGameState("waiting");
             setTimer(time);
@@ -253,36 +236,45 @@ function Lobby() {
             setSelectedOption(null);
             setIsAnswered(false);
             setQuestionNumber(0);
-            return 0; // Stop the timer
+            return 0;
           }
         }
         return prev - 1;
       });
     }, 1000);
 
-    return () => clearInterval(intervalRef.current); // Cleanup on re-renders
-  }, [gameState, questionNumber, time]); // Dependencies updated
+    return () => clearInterval(intervalRef.current);
+  }, [gameState, questionNumber, time, questionsArray.length]);
 
   const currentQuestion = questionsArray[questionNumber];
 
   return (
-    <div
-      className="min-h-screen flex flex-col items-center bg-cover bg-center p-4"
-      style={{ backgroundImage: "url(/Assets/background.png)" }}
-    >
+    <div className="min-h-screen flex flex-col items-center bg-[#FFEFD5] p-6 relative overflow-hidden">
+      <div
+        className="absolute inset-0 opacity-[0.05] pointer-events-none"
+        style={{
+          backgroundImage: "radial-gradient(#000 2px, transparent 2px)",
+          backgroundSize: "30px 30px",
+        }}
+      ></div>
+
+      {/* Leave Party Button */}
       <button
         onClick={() => {
           socket.emit("leaveParty", roomCode);
           navigate("/multiplayer");
         }}
-        className="fixed left-4 rounded-2xl bg-[#d2d1d142] z-10"
+        className="fixed left-6 top-6 z-50 bg-white border-4 border-black p-2 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all"
+        title="Leave Party"
       >
-        <FiArrowLeft size={30} />
+        <FiArrowLeft size={30} color="black" strokeWidth={3} />
       </button>
+
       <Logo />
 
-      <div className="flex flex-col sm:flex-row gap-10 w-full max-w-screen-xl mt-10">
-        {/* Player List on Left */}
+      {/* Main Grid Layout */}
+      <div className="flex flex-col lg:flex-row gap-8 w-full max-w-7xl mt-8 relative z-10 items-start justify-center">
+        {/* Left Side: Player List */}
         <PlayerList
           players={players}
           host={host}
@@ -290,39 +282,36 @@ function Lobby() {
           images={images}
           handleKick={handleKick}
         />
+
+        {/* Center: Main Game Area */}
         {gameState === "newGame" ? (
-          <>
-            {/* Game Settings and Chat on Right */}
-            <GameSetting
-              category={category}
-              noOfQuestion={noOfQuestion}
-              time={time}
-              difficulty={difficulty}
-              copied={copied}
-              copyCodeToClipboard={copyCodeToClipboard}
-              host={host}
-              handleCategoryChange={handleCategoryChange}
-              handleDifficultyChange={handleDifficultyChange}
-              handleNoOfQuestionsChange={handleNoOfQuestionsChange}
-              handleTimerChange={handleTimerChange}
-              loading={loading}
-              getQuiz={getQuiz}
-            />
-          </>
+          <GameSetting
+            category={category}
+            noOfQuestion={noOfQuestion}
+            time={time}
+            difficulty={difficulty}
+            copied={copied}
+            copyCodeToClipboard={copyCodeToClipboard}
+            host={host}
+            handleCategoryChange={handleCategoryChange}
+            handleDifficultyChange={handleDifficultyChange}
+            handleNoOfQuestionsChange={handleNoOfQuestionsChange}
+            handleTimerChange={handleTimerChange}
+            loading={loading}
+            getQuiz={getQuiz}
+          />
         ) : gameState === "started" ? (
-          <>
-            <QuizWindow
-              timer={timer}
-              time={time}
-              questionNumber={questionNumber}
-              noOfQuestion={noOfQuestion}
-              currentQuestion={currentQuestion}
-              selectedOption={selectedOption}
-              isAnswered={isAnswered}
-              handleAnswer={handleAnswer}
-              category={category}
-            />
-          </>
+          <QuizWindow
+            timer={timer}
+            time={time}
+            questionNumber={questionNumber}
+            noOfQuestion={noOfQuestion}
+            currentQuestion={currentQuestion}
+            selectedOption={selectedOption}
+            isAnswered={isAnswered}
+            handleAnswer={handleAnswer}
+            category={category}
+          />
         ) : (
           <Waiting
             players={players}
@@ -331,8 +320,10 @@ function Lobby() {
           />
         )}
 
-        {/* Chat Box */}
+        {/* Right Side: Chat Box */}
         <ChatBox messages={messages} sendMessage={sendMessage} />
+
+        {/* Mobile Specific Chat & Player List */}
         <MobileChatNPlayer
           players={players}
           images={images}
@@ -346,14 +337,16 @@ function Lobby() {
 
       <ToastContainer
         position="top-center"
-        autoClose={2000}
-        hideProgressBar
-        newestOnTop
-        closeButton
+        autoClose={800}
+        hideProgressBar={true}
+        newestOnTop={true}
+        closeOnClick
         rtl={false}
-        pauseOnFocusLoss
+        pauseOnFocusLoss={false}
         draggable
-        pauseOnHover
+        pauseOnHover={false}
+        theme="colored"
+        limit={1}
       />
     </div>
   );

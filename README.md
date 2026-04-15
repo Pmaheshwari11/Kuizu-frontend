@@ -1,70 +1,131 @@
-# Getting Started with Create React App
+# 🎮 Kuizu | Multiplayer Quiz Game
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Kuizu is a real-time quiz game built with React that supports both **single-player** and **multiplayer gameplay**. It uses WebSockets for live interaction and AI/APIs to generate quiz questions dynamically.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## 🚀 Features
 
-### `npm start`
+### 🎯 Single Player Modes
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- **Classic Mode** – fixed 10 questions, score-based
+- **Survival Mode** – 3 lives, play until eliminated
+- **Time Attack** – race against time with bonuses/penalties
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+---
 
-### `npm test`
+### 🎮 Multiplayer Mode
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- Create or join rooms with a unique code
+- Real-time synced gameplay
+- Live leaderboard and scoring
+- Host controls:
+  - Start / restart game
+  - Kick players
+  - Change settings (difficulty, timer, questions)
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 💬 Chat System
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- Real-time messaging during gameplay
+- System messages (join, leave, host updates)
+- Auto-scroll + message trimming
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+---
 
-### `npm run eject`
+### 🧠 Quiz Engine
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+- Fetches questions from API / Gemini backend
+- Supports:
+  - Category selection
+  - Difficulty levels
+  - Custom question count
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+---
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### 🎨 UI / UX
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+- Neubrutalist design
+- Fully responsive (mobile + desktop)
+- Avatar selection with local storage
+- Smooth transitions and feedback
 
-## Learn More
+---
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## 📂 Project Structure
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```text
+frontend/
+├── public/
+├── src/
+│   ├── components/
+│   │   ├── home.jsx
+│   │   ├── singlePlayer.jsx
+│   │   ├── multiPlayer.jsx
+│   │   ├── lobby.jsx
+│   │   ├── quizWindow.jsx
+│   │   ├── chatbox.jsx
+│   │   ├── playerList.jsx
+│   │   ├── waitingScreen.jsx
+│   │   ├── joinRoom.jsx
+│   │   ├── chooseAvtar.jsx
+│   │   ├── gameSetting.jsx
+│   │   ├── mobileChat.jsx
+│   │   ├── images.jsx
+│   │   └── logo.jsx
+│   ├── App.js
+│   ├── index.js
+│   ├── server.js
+│   └── websocket.js
+```
 
-### Code Splitting
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## ⚙️ Setup
 
-### Analyzing the Bundle Size
+```bash
+npm install
+npm start
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+Runs on:
 
-### Making a Progressive Web App
+```
+http://localhost:3000
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+---
 
-### Advanced Configuration
+## 🛠 Tech Stack
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+- React
+- React Router
+- WebSockets
+- Tailwind CSS
+- React Toastify
+- Gemini / Quiz API
 
-### Deployment
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## ⚠️ Limitations
 
-### `npm run build` fails to minify
+- Requires backend server + WebSocket connection
+- Depends on external APIs for quiz data
+- Multiplayer sync depends on network latency
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+---
+
+## 📌 Future Improvements
+
+- Better animations and sound effects
+- Improved mobile multiplayer UI
+- Persistent leaderboard
+- Game history
+
+---
+
+## 👨‍💻 Authors
+
+- Parth Dudani
+- Divyansh Maheshwari
