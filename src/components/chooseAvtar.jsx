@@ -62,7 +62,8 @@ function ChooseAvatar() {
       if (connected) {
         socket.emit("createParty", name, selectedImage);
         socket.once("partyCreated", (data) => {
-          navigate(`/lobby/${btoa(data.currentPartyId)}`);
+          console.log(data);
+          navigate(`/lobby/${btoa(data.partyId)}`);
         });
       } else {
         toast.error("Unable to connect to the server.");
